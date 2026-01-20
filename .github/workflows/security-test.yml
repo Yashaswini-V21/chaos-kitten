@@ -1,0 +1,150 @@
+name: 🐱 Chaos Kitten Security Scan
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  # Allow manual trigger
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    
+    services:
+      # Start the demo API for testing (optional - use your own API)
+      demo-api:
+        image: python:3.11-slim
+        ports:
+          - 5000:5000
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install Chaos Kitten
+        run: |
+          pip install chaos-kitten
+          # Or install from source:
+          # pip install -e .
+
+      - name: 🚀 Start Demo API (if testing demo)
+        run: |
+          cd examples/demo_api
+          pip install -r requirements.txt
+          python app.py &
+          sleep 5  # Wait for server to start
+        continue-on-error: true
+
+      - name: 🐱 Run Chaos Kitten Scan
+        id: scan
+        run: |
+          chaos-kitten scan \
+            --config chaos-kitten.yaml \
+            --output ./reports \
+            --format sarif \
+            --fail-on-critical
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true
+
+      - name: 📊 Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ./reports/results.sarif
+        continue-on-error: true
+
+      - name: 📁 Upload Security Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-report-${{ github.run_number }}
+          path: ./reports/
+          retention-days: 30
+
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🐱 Chaos Kitten Security Scan Results\n\n';
+            
+            try {
+              const report = JSON.parse(fs.readFileSync('./reports/results.json', 'utf8'));
+              
+              comment += `| Severity | Count |\n`;
+              comment += `|----------|-------|\n`;
+              comment += `| 🔴 Critical | ${report.critical || 0} |\n`;
+              comment += `| 🟠 High | ${report.high || 0} |\n`;
+              comment += `| 🟡 Medium | ${report.medium || 0} |\n`;
+              comment += `| 🟢 Low | ${report.low || 0} |\n\n`;
+              
+              if (report.critical > 0 || report.high > 0) {
+                comment += '⚠️ **Security issues found!** Please review the full report.\n';
+              } else {
+                comment += '✅ No critical or high severity issues found.\n';
+              }
+            } catch (e) {
+              comment += '📋 See the uploaded artifacts for the full report.\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: ❌ Fail if Critical Vulnerabilities
+        if: steps.scan.outcome == 'failure'
+        run: |
+          echo "🚨 Critical vulnerabilities found! Failing the build."
+          exit 1
+
+  # Optional: Scheduled weekly scan
+  scheduled-scan:
+    name: 📅 Weekly Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Install Chaos Kitten
+        run: pip install chaos-kitten
+        
+      - name: 🐱 Run Full Scan
+        run: |
+          chaos-kitten scan \
+            --config chaos-kitten.yaml \
+            --output ./reports \
+            --verbose
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          
+      - name: 📧 Send Report
+        if: always()
+        run: |
+          echo "Security scan completed. Check artifacts for report."
+          # Add your notification logic here (Slack, email, etc.)

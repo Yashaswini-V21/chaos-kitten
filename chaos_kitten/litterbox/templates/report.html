@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 Chaos Kitten Security Report</title>
+    <style>
+        :root {
+            --bg-dark: #0d1117;
+            --bg-card: #161b22;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --critical: #f85149;
+            --high: #f97316;
+            --medium: #eab308;
+            --low: #22c55e;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1));
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-critical .stat-value { color: var(--critical); }
+        .stat-high .stat-value { color: var(--high); }
+        .stat-medium .stat-value { color: var(--medium); }
+        .stat-low .stat-value { color: var(--low); }
+
+        /* Vulnerability List */
+        .section-title {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-purple);
+        }
+
+        .vuln-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--critical);
+        }
+
+        .vuln-card.high { border-left-color: var(--high); }
+        .vuln-card.medium { border-left-color: var(--medium); }
+        .vuln-card.low { border-left-color: var(--low); }
+
+        .vuln-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .vuln-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .severity-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-critical { background: rgba(248, 81, 73, 0.2); color: var(--critical); }
+        .severity-high { background: rgba(249, 115, 22, 0.2); color: var(--high); }
+        .severity-medium { background: rgba(234, 179, 8, 0.2); color: var(--medium); }
+        .severity-low { background: rgba(34, 197, 94, 0.2); color: var(--low); }
+
+        .vuln-endpoint {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .cat-message {
+            font-style: italic;
+            color: var(--accent-pink);
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(236, 72, 153, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        /* PoC Section */
+        .poc-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .poc-section h4 {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        pre {
+            background: #0d1117;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+
+        code {
+            color: #79c0ff;
+        }
+
+        /* Remediation */
+        .remediation {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .remediation h4 {
+            color: var(--low);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 3rem;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .vuln-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🐱</div>
+            <h1>Chaos Kitten Security Report</h1>
+            <p class="subtitle">Generated: {{ generated_at }}</p>
+        </header>
+
+        <div class="summary-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ endpoints_tested }}</div>
+                <div class="stat-label">Endpoints Tested</div>
+            </div>
+            <div class="stat-card stat-critical">
+                <div class="stat-value">{{ critical_count }}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-card stat-high">
+                <div class="stat-value">{{ high_count }}</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat-card stat-medium">
+                <div class="stat-value">{{ medium_count }}</div>
+                <div class="stat-label">Medium</div>
+            </div>
+            <div class="stat-card stat-low">
+                <div class="stat-value">{{ low_count }}</div>
+                <div class="stat-label">Low</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">🚨 Vulnerabilities Found</h2>
+
+        {% for vuln in vulnerabilities %}
+        <div class="vuln-card {{ vuln.severity | lower }}">
+            <div class="vuln-header">
+                <span class="vuln-title">{{ vuln.title }}</span>
+                <span class="severity-badge severity-{{ vuln.severity | lower }}">{{ vuln.severity }}</span>
+            </div>
+            
+            <div class="vuln-endpoint">{{ vuln.method }} {{ vuln.endpoint }}</div>
+            
+            <p class="cat-message">{{ vuln.cat_message }}</p>
+            
+            <p>{{ vuln.description }}</p>
+
+            <div class="poc-section">
+                <h4>📋 Proof of Concept</h4>
+                <pre><code>{{ vuln.poc }}</code></pre>
+            </div>
+
+            <div class="remediation">
+                <h4>🔧 Remediation</h4>
+                <p>{{ vuln.remediation }}</p>
+            </div>
+        </div>
+        {% endfor %}
+
+        <footer>
+            <p>🐱 Generated by Chaos Kitten v{{ version }}</p>
+            <p>The adorable AI agent that knocks things off your API tables</p>
+        </footer>
+    </div>
+</body>
+</html>

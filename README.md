@@ -1,29 +1,144 @@
-# 🐱 Chaos Kitten
+<p align="center">
+  <img src="docs/assets/transparent_logo.png" width="280" alt="Chaos Kitten Logo">
+</p>
 
-> The adorable AI agent that knocks things off your API tables
+<h1 align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=28&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=Chaos+Kitten+%F0%9F%90%B1;Breaking+code+before+hackers+do;AI-Powered+Security+Testing" alt="Typing SVG" />
+</h1>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![CNCF](https://img.shields.io/badge/CNCF-Cloud%20Native-blue)](https://www.cncf.io/)
+<p align="center">
+  <em>The adorable AI agent that knocks things off your API tables</em>
+</p>
+
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-a855f7.svg?style=for-the-badge&labelColor=1a1b27" alt="License: MIT">
+  </a>
+  <a href="https://www.python.org/downloads/">
+    <img src="https://img.shields.io/badge/Python-3.10+-3776ab.svg?style=for-the-badge&logo=python&logoColor=white&labelColor=1a1b27" alt="Python 3.10+">
+  </a>
+  <a href="https://www.cncf.io/">
+    <img src="https://img.shields.io/badge/CNCF-Cloud%20Native-0086ff.svg?style=for-the-badge&logo=cncf&logoColor=white&labelColor=1a1b27" alt="CNCF">
+  </a>
+  <a href="https://github.com/mdhaarishussain/chaos-kitten/stargazers">
+    <img src="https://img.shields.io/github/stars/mdhaarishussain/chaos-kitten?style=for-the-badge&logo=github&color=f97316&labelColor=1a1b27" alt="Stars">
+  </a>
+</p>
+
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-how-it-works">How It Works</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-contributing">Contributing</a>
+</p>
+
+---
 
 ## 🎯 What is Chaos Kitten?
 
-Chaos Kitten is an **agentic AI security testing tool** that acts like a mischievous cat—it explores your API, understands the business logic, and systematically tries to "break" things before malicious actors do.
+<table>
+<tr>
+<td width="60%">
 
-Unlike traditional fuzzers (ZAP, Burp) that spray random payloads, Chaos Kitten **reasons** about your API structure and crafts intelligent attacks.
+**Chaos Kitten** is an **agentic AI security testing tool** that acts like a mischievous cat—it explores your API, understands the business logic, and systematically tries to "break" things before malicious actors do.
 
-### 🤔 Why Chaos Kitten?
+Unlike traditional fuzzers (ZAP, Burp) that spray random payloads, Chaos Kitten **reasons** about your API structure and crafts **intelligent attacks**.
+
+</td>
+<td width="40%">
+
+```
+� Agent thinks...
+"This is a login endpoint.
+I should test for:
+- SQL injection in username
+- User enumeration
+- Brute force protection"
+```
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🤔 The Problem
 
 AI-powered "vibe coding" tools (Claude, Cursor, Windsurf) generate backend APIs at incredible speed, but they often skip critical security measures:
 
-- ❌ Missing authentication/authorization
-- ❌ No input validation
-- ❌ Vulnerable to SQL injection, XSS, and other OWASP Top 10 attacks
-- ❌ Logic flaws that allow unauthorized access
+<table>
+<tr>
+<td align="center" width="25%">
+  <h3>❌</h3>
+  <strong>Missing Auth</strong><br>
+  <sub>No authentication on critical endpoints</sub>
+</td>
+<td align="center" width="25%">
+  <h3>❌</h3>
+  <strong>No Validation</strong><br>
+  <sub>Input fields accept anything</sub>
+</td>
+<td align="center" width="25%">
+  <h3>❌</h3>
+  <strong>SQL Injection</strong><br>
+  <sub>Queries built with string concatenation</sub>
+</td>
+<td align="center" width="25%">
+  <h3>❌</h3>
+  <strong>Logic Flaws</strong><br>
+  <sub>IDOR, privilege escalation</sub>
+</td>
+</tr>
+</table>
 
-**Chaos Kitten finds these issues before attackers do.**
+> **Real Story:** While building [Bondhu](https://bondhu.tech) (Digital Twin for mental wellness), we discovered our AI-generated backend had ZERO authentication on critical endpoints. Anyone could access user data.
 
-## 🚀 Quick Start
+**Chaos Kitten finds these issues before attackers do.** 🔒
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🧠 The Brain (AI Orchestrator)
+- Parses OpenAPI/Swagger specs
+- Understands endpoint semantics
+- Plans intelligent multi-step attacks
+- Uses Chain-of-Thought reasoning
+
+### � The Paws (Executor)
+- Async HTTP with `httpx`
+- Playwright browser automation
+- Rate limiting & politeness controls
+- Multiple auth methods
+
+</td>
+<td width="50%">
+
+### 🧶 The Toy Box (Attack Library)
+- SQL Injection profiles
+- XSS payloads (reflected, stored)
+- IDOR detection strategies
+- Naughty strings collection
+- *Easy to contribute!*
+
+### 📦 The Litterbox (Reporter)
+- Beautiful HTML reports
+- Markdown export
+- PoC curl commands
+- Remediation guidance
+
+</td>
+</tr>
+</table>
+
+---
+
+## �🚀 Quick Start
 
 ```bash
 # Install
@@ -38,7 +153,7 @@ chaos-kitten scan --config chaos-kitten.yaml
 
 ### Example Output
 
-```
+```ansi
 🐱 Chaos Kitten v1.0.0
 📋 Parsing OpenAPI spec...
 🎯 Found 12 endpoints
@@ -53,45 +168,48 @@ chaos-kitten scan --config chaos-kitten.yaml
 📊 Report saved to ./reports/chaos-kitten-2026-01-20.html
 ```
 
+---
+
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     Chaos Kitten                         │
-├─────────────────────────────────────────────────────────┤
-│                                                           │
-│  ┌──────────────┐      ┌──────────────┐                 │
-│  │   The Brain  │──────│  The Paws    │                 │
-│  │ (Orchestrator)│      │  (Executor)  │                 │
-│  │              │      │              │                 │
-│  │ - OpenAPI    │      │ - httpx      │                 │
-│  │   Parser     │      │ - Playwright │                 │
-│  │ - LLM Agent  │      │ - Async      │                 │
-│  └──────┬───────┘      └──────┬───────┘                 │
-│         │                     │                          │
-│         └─────────┬───────────┘                          │
-│                   │                                      │
-│         ┌─────────▼─────────┐                            │
-│         │   The Toy Box     │                            │
-│         │  (Attack Library) │                            │
-│         └─────────┬─────────┘                            │
-│                   │                                      │
-│         ┌─────────▼─────────┐                            │
-│         │  The Litterbox    │                            │
-│         │   (Reporter)      │                            │
-│         └───────────────────┘                            │
-│                                                           │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        🐱 Chaos Kitten                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌────────────────┐           ┌────────────────┐               │
+│   │   🧠 Brain     │───────────│   🐾 Paws      │               │
+│   │  Orchestrator  │           │   Executor     │               │
+│   │                │           │                │               │
+│   │  • OpenAPI     │           │  • httpx       │               │
+│   │  • LLM Agent   │           │  • Playwright  │               │
+│   │  • Planner     │           │  • Async       │               │
+│   └───────┬────────┘           └───────┬────────┘               │
+│           │                            │                         │
+│           └────────────┬───────────────┘                         │
+│                        │                                         │
+│              ┌─────────▼─────────┐                               │
+│              │   🧶 Toy Box      │                               │
+│              │  Attack Profiles  │                               │
+│              │                   │                               │
+│              │  • SQL Injection  │                               │
+│              │  • XSS Payloads   │                               │
+│              │  • IDOR Tests     │                               │
+│              └─────────┬─────────┘                               │
+│                        │                                         │
+│              ┌─────────▼─────────┐                               │
+│              │   📦 Litterbox    │                               │
+│              │    Reporter       │                               │
+│              │                   │                               │
+│              │  • HTML Reports   │                               │
+│              │  • PoC Scripts    │                               │
+│              │  • Remediation    │                               │
+│              └───────────────────┘                               │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Components
-
-| Component | Description |
-|-----------|-------------|
-| **The Brain** | LLM-powered orchestrator that plans attacks |
-| **The Paws** | Async HTTP executor with Playwright support |
-| **The Toy Box** | YAML/JSON attack profiles (easy to contribute!) |
-| **The Litterbox** | Beautiful HTML/Markdown security reports |
+---
 
 ## 📦 Installation
 
@@ -108,6 +226,14 @@ git clone https://github.com/mdhaarishussain/chaos-kitten.git
 cd chaos-kitten
 pip install -e .
 ```
+
+### With Development Dependencies
+
+```bash
+pip install -e ".[dev]"
+```
+
+---
 
 ## ⚙️ Configuration
 
@@ -138,6 +264,10 @@ safety:
   destructive_mode: false
 ```
 
+> 📄 See [chaos-kitten.yaml](chaos-kitten.yaml) for all configuration options.
+
+---
+
 ## 🎮 Usage
 
 ### Basic Scan
@@ -156,7 +286,7 @@ chaos-kitten scan --spec openapi.json --target http://localhost:3000
 
 ```yaml
 # .github/workflows/security-test.yml
-name: Chaos Kitten Security Scan
+name: 🐱 Chaos Kitten Security Scan
 
 on: [pull_request]
 
@@ -164,72 +294,119 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Start API
-        run: docker-compose up -d
+      - uses: actions/checkout@v4
       - name: Run Chaos Kitten
         run: |
           pip install chaos-kitten
           chaos-kitten scan --fail-on-critical
 ```
 
+---
+
 ## 🎁 Contributing
 
-We love contributions! Chaos Kitten is designed to be beginner-friendly:
+We **love** contributions! Chaos Kitten is designed to be beginner-friendly.
 
-### 🐣 First-Timers (No Coding!)
-- Add attack payloads to `toys/data/naughty_strings.json`
-- Create attack profiles in `toys/` folder
-- Fix typos in documentation
+<table>
+<tr>
+<td align="center" width="33%">
 
-### 🐥 Beginners (Basic Python)
+### 🐣 First-Timers
+*No coding required!*
+
+- Add payloads to `toys/`
+- Fix typos in docs
+- Add naughty strings
+
+</td>
+<td align="center" width="33%">
+
+### 🐥 Beginners
+*Basic Python*
+
 - Write unit tests
+- Create YAML attack profiles
 - Add CLI features
-- Create new YAML attack profiles
 
-### 🐔 Intermediate
-- Implement new attack strategies
-- Add GraphQL support
-- Enhance Playwright integration
+</td>
+<td align="center" width="33%">
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+### 🐔 Advanced
+*Core Features*
+
+- New attack strategies
+- GraphQL support
+- LLM optimization
+
+</td>
+</tr>
+</table>
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/contributing_guide.md](docs/contributing_guide.md) for details.
+
+---
 
 ## 🔒 Safety & Ethics
 
-⚖️ **LEGAL NOTICE**
-
-Chaos Kitten is intended for testing YOUR OWN applications or systems where you have explicit permission. Unauthorized access to computer systems is illegal. Users are responsible for compliance with applicable laws. The developers assume no liability for misuse.
+> ⚖️ **LEGAL NOTICE**
+>
+> Chaos Kitten is intended for testing **YOUR OWN** applications or systems where you have **explicit permission**. Unauthorized access to computer systems is illegal. Users are responsible for compliance with applicable laws. The developers assume no liability for misuse.
 
 ### Built-in Safeguards
 
-- ✅ **Allowlist-Only:** Won't scan domains not in `allowed_domains`
-- ✅ **Rate Limiting:** Respects server resources
-- ✅ **Non-Destructive Default:** Prevents DROP/DELETE operations
-- ✅ **Audit Logging:** All actions logged
+| Feature | Description |
+|---------|-------------|
+| ✅ **Allowlist-Only** | Won't scan domains not in `allowed_domains` |
+| ✅ **Rate Limiting** | Respects server resources |
+| ✅ **Non-Destructive** | Prevents DROP/DELETE by default |
+| ✅ **Audit Logging** | All actions logged |
+
+---
 
 ## 🗺️ Roadmap
 
+<table>
+<tr>
+<td width="33%">
+
 ### Phase 1 (MVP) ✅
 - [x] OpenAPI parsing
-- [x] SQL injection, XSS, IDOR detection
-- [x] HTML/Markdown reporting
+- [x] SQL injection detection
+- [x] XSS & IDOR detection
+- [x] HTML/Markdown reports
 - [x] CLI tool
 
-### Phase 2
+</td>
+<td width="33%">
+
+### Phase 2 🔄
 - [ ] GraphQL support
-- [ ] gRPC/Protobuf support
+- [ ] gRPC/Protobuf
 - [ ] WebSocket testing
 - [ ] GitHub Action
 
-### Phase 3 (CNCF)
+</td>
+<td width="33%">
+
+### Phase 3 🚀
 - [ ] Kubernetes Operator
 - [ ] Service Mesh integration
 - [ ] Real-time dashboard
 - [ ] OPA integration
 
-## 🏆 Acknowledgments
+</td>
+</tr>
+</table>
 
-Built for **Aperture 3.0** by Resourcio Community
+---
+
+## 🏆 Built For
+
+<p align="center">
+  <strong>Aperture 3.0</strong> by <a href="https://github.com/resourcio">Resourcio Community</a>
+</p>
+
+---
 
 ## 📄 License
 
@@ -238,7 +415,15 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mdhaarishussain/chaos-kitten/main/docs/assets/kitten.png" alt="Chaos Kitten" width="100">
+  <img src="docs/assets/transparent_logo.png" alt="Chaos Kitten" width="80">
+  <br><br>
+  <strong>Chaos Kitten</strong>
   <br>
-  <i>"Breaking your code before hackers do"</i>
+  <em>"Breaking your code before hackers do"</em>
+  <br><br>
+  Made with 💜 by the Chaos Kitten Team
+</p>
+
+<p align="center">
+  <a href="https://github.com/mdhaarishussain/chaos-kitten/stargazers">⭐ Star us on GitHub</a>
 </p>
