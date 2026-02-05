@@ -1,0 +1,51 @@
+---
+name: "Command Injection / OS Command Injection"
+category: "code-injection"
+severity: "critical"
+description: "Tests for OS command injection vulnerabilities in user inputs"
+
+target_fields:
+  - "command"
+  - "cmd"
+  - "exec"
+  - "shell"
+  - "system"
+  - "query"
+  - "search"
+  - "url"
+
+payloads:
+  # Unix/Linux command separators
+  - "; whoami"
+  - "| whoami"
+  - "| id"
+  - "&& whoami"
+  - "|| whoami"
+  - "`whoami`"
+  - "$(whoami)"
+
+  # Windows command separators
+  - "& whoami"
+  - "| dir"
+
+  # Blind command injection (time-based)
+  - "; sleep 5"
+  - "&& ping -c 5 127.0.0.1"
+  - "| timeout /t 5"
+
+success_indicators:
+  response_patterns:
+    - "root"
+    - "uid="
+    - "gid="
+    - "administrator"
+    - "nt authority"
+  status_codes:
+    - 200
+
+remediation: |
+  1. Never use user input directly in shell commands
+  2. Use parameterized/escaped command execution APIs
+  3. Implement strict input validation with allowlists
+  4. Run application with minimal privileges
+  5. Use sandboxing/containers for command execution
