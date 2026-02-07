@@ -2,6 +2,8 @@
 
 from typing import Any
 import httpx
+import asyncio
+import time
 
 
 class Executor:
@@ -87,25 +89,27 @@ class Executor:
 
         url = path.lstrip("/")
         
+        # Rate Limiting
+        if self.rate_limit > 0:
+            await asyncio.sleep(1.0 / self.rate_limit)
+        
         # Merge headers
         # Start timing
-        import time
         start_time = time.time()
         
         try:
             # Handle different payload types based on method usually, 
             # but httpx handles 'json' or 'data' or 'params'
-            # simplified: use 'json' for body if method is POST/PUT/PATCH, 'params' otherwise
-            # This is a simplification for the MVP
             
             kwargs = {}
             if headers:
                 kwargs["headers"] = headers
-                
-            if method.upper() in ["POST", "PUT", "PATCH"]:
-                 kwargs["json"] = payload
-            else:
-                 kwargs["params"] = payload
+            
+            if payload is not None:
+                if method.upper() in ["POST", "PUT", "PATCH"]:
+                    kwargs["json"] = payload
+                else:
+                    kwargs["params"] = payload
                  
             response = await self._client.request(method, url, **kwargs)
             duration = time.time() - start_time

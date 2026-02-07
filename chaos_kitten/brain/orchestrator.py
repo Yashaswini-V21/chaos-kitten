@@ -10,6 +10,7 @@ from chaos_kitten.brain.openapi_parser import OpenAPIParser
 from chaos_kitten.brain.attack_planner import AttackPlanner
 from chaos_kitten.paws.executor import Executor
 from chaos_kitten.litterbox.reporter import Reporter
+from chaos_kitten.brain.response_analyzer import ResponseAnalyzer
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -59,9 +60,13 @@ class Orchestrator:
         console.print("[bold green]🧠 Brain initializing...[/bold green]")
         
         # 1. Parse OpenAPI Spec
-        spec_path = self.config.get("api", {}).get("spec_path") or self.config.get("spec")
+        spec_path = (
+            self.config.get("api", {}).get("spec_path")
+            or self.config.get("spec")
+            or self.config.get("target", {}).get("openapi_spec")
+        )
         if not spec_path:
-            raise ValueError("No OpenAPI spec path provided in config (api.spec_path or spec)")
+            raise ValueError("No OpenAPI spec path provided in config (target.openapi_spec or api.spec_path)")
 
         console.print(f"📋 Parsing OpenAPI spec from: [cyan]{spec_path}[/cyan]")
         
@@ -80,17 +85,31 @@ class Orchestrator:
         planner = AttackPlanner(self.endpoints)
         # planner.load_attack_profiles() # Stubbed in planner
         
-        target_url = self.config.get("api", {}).get("base_url") or self.config.get("target")
+        target_url = (
+            self.config.get("target", {}).get("base_url")
+            or self.config.get("api", {}).get("base_url")
+            or self.config.get("target")
+        )
 
         if not target_url:
-             raise ValueError("No target URL provided (api.base_url or target)")
+             raise ValueError("No target URL provided (target.base_url or api.base_url)")
 
         console.print(f"🚀 Starting scan against: [cyan]{target_url}[/cyan]")
+        
+        # Authentication
+        auth_config = (
+            self.config.get("target", {}).get("auth") or 
+            self.config.get("api", {}).get("auth", {})
+        )
+        auth_type = auth_config.get("type", "none")
+        auth_token = auth_config.get("token")
 
         # 3. Execute
         executor_config = self.config.get("executor", {})
         async with Executor(
             base_url=target_url,
+            auth_type=auth_type,
+            auth_token=auth_token,
             rate_limit=executor_config.get("rate_limit", 10),
             timeout=executor_config.get("timeout", 30)
         ) as executor:
@@ -102,6 +121,7 @@ class Orchestrator:
             ) as progress:
                 
                 task = progress.add_task(description="Scanning...", total=len(self.endpoints))
+                analyzer = ResponseAnalyzer()
                 
                 for endpoint in self.endpoints:
                     path = endpoint["path"]
@@ -112,6 +132,7 @@ class Orchestrator:
                     plans = planner.plan_attacks(endpoint)
                     
                     if not plans:
+                        progress.advance(task)
                         continue
                         
                     for plan in plans:
@@ -125,14 +146,24 @@ class Orchestrator:
                                 payload=payload
                             )
                             
-                            # Simple MVP Analysis: 500 error = Potential SQLi
-                            if result["status_code"] >= 500:
+                            # Analyze response
+                            endpoint_id = f"{method} {path}"
+                            finding = analyzer.analyze(
+                                response_body=result["response_body"],
+                                status_code=result["status_code"],
+                                response_time_ms=result["duration"] * 1000,
+                                payload_used=str(payload) if payload else "",
+                                endpoint=endpoint_id,
+                                attack_type=plan.get("type", "unknown")
+                            )
+                            
+                            if finding:
                                 self.scan_results["vulnerabilities"].append({
-                                    "type": plan["type"],
-                                    "severity": "High",
-                                    "endpoint": f"{method} {path}",
-                                    "description": f"Potential {plan['name']} detected. Server returned {result['status_code']}.",
-                                    "evidence": result["response_body"][:200]
+                                    "type": finding.vulnerability_type,
+                                    "severity": finding.severity.value if hasattr(finding.severity, "value") else str(finding.severity),
+                                    "endpoint": finding.endpoint,
+                                    "description": finding.evidence, # Mapping evidence to description for now as per previous schema
+                                    "evidence": finding.evidence
                                 })
                                 console.print(f"   [red]⚠️  Vulnerability found at {method} {path}[/red]")
                                 

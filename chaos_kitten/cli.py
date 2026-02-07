@@ -164,16 +164,26 @@ def scan(
             
     # CLI args override config
     if target:
+        if "target" not in app_config: app_config["target"] = {}
+        app_config["target"]["base_url"] = target
+        # Also support legacy api path for backward compat if needed, but prefer target
         if "api" not in app_config: app_config["api"] = {}
         app_config["api"]["base_url"] = target
         
     if spec:
+        if "target" not in app_config: app_config["target"] = {}
+        app_config["target"]["openapi_spec"] = spec
+        # Support legacy path
         if "api" not in app_config: app_config["api"] = {}
         app_config["api"]["spec_path"] = spec
         
     if output:
         if "reporting" not in app_config: app_config["reporting"] = {}
         app_config["reporting"]["output_path"] = output
+
+    if format:
+        if "reporting" not in app_config: app_config["reporting"] = {}
+        app_config["reporting"]["format"] = format
 
     # Run the orchestrator
     from chaos_kitten.brain.orchestrator import Orchestrator
