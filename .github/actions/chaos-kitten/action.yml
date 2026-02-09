@@ -72,12 +72,13 @@ runs:
         SEVERITY_THRESHOLD: ${{ inputs.severity-threshold }}
       run: |
         echo "::group::Security Scan"
+        # Run scan, allowing failure so we can still process reports
         chaos-kitten scan \
           --target "${{ inputs.target-url }}" \
           --spec "${{ inputs.openapi-spec }}" \
           --provider "${{ inputs.llm-provider }}" \
           --format sarif \
-          --output ./reports
+          --output ./reports || echo "Scan command exited with error"
         
         # Set outputs
         if [ -f "./reports/results.sarif" ]; then
