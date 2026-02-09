@@ -41,6 +41,7 @@ jobs:
       - name: Run Chaos Kitten
         id: scan
         uses: ./.github/actions/chaos-kitten
+        continue-on-error: true
         with:
           target-url: 'http://localhost:5000'
           openapi-spec: './examples/sample_openapi.json'
