@@ -25,6 +25,9 @@ def load_results(report_dir):
 
 def check_failure_condition(stats, threshold):
     """Check if vulnerabilities exceed severity threshold."""
+    if threshold.lower() == "none" or threshold.lower() == "off":
+        return False, []
+
     threshold_val = SEVERITY_LEVELS.get(threshold.lower(), 3) # Default to high
     
     failed = False

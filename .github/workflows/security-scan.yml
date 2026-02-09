@@ -41,11 +41,10 @@ jobs:
       - name: Run Chaos Kitten
         id: scan
         uses: ./.github/actions/chaos-kitten
-        continue-on-error: true
         with:
           target-url: 'http://localhost:5000'
           openapi-spec: './examples/sample_openapi.json'
-          severity-threshold: 'high'
+          severity-threshold: 'none'
           llm-provider: 'openai'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

@@ -10,7 +10,7 @@ inputs:
     description: 'Path to OpenAPI specification file'
     required: true
   severity-threshold:
-    description: 'Minimum severity to fail (critical, high, medium, low)'
+    description: 'Minimum severity to fail (critical, high, medium, low, none)'
     required: false
     default: 'high'
   llm-provider:
