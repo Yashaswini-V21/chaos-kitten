@@ -519,7 +519,7 @@ For the authoritative contributor checklist (and any future pre-commit/CI-only s
 
 The commands below are a quick reference; if they ever diverge from the contribution docs, trust those docs and `pyproject.toml`.
 
-Recommended local commands:
+Recommended local commands (scope to files you changed when possible):
 
 ```bash
 black .
@@ -527,7 +527,7 @@ ruff check .
 mypy chaos_kitten
 ```
 
-These tools (`black`, `ruff`, `mypy`, `pytest`) are the standard quality checks for this repo. Depending on the current CI configuration, some or all of them may also run in GitHub Actions, but you should run them locally before submitting a PR to avoid avoidable review back-and-forth.
+Black and Ruff are the primary style/lint tools, and Mypy is the preferred type checker. Depending on the current CI configuration, some or all of them may also run in GitHub Actions, but running them locally is still the fastest way to catch issues before review.
 
 Before opening a PR, run:
 
