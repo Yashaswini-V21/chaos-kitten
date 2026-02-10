@@ -59,11 +59,15 @@ async def execute_and_analyze(state: AgentState) -> dict:
     new_findings = []
     
     for attack in state["planned_attacks"]:
-        result = await executor.execute_attack(
-            method=endpoint.get("method", "GET"),
-            path=endpoint.get("path"),
-            payload=attack.get("payload"),
-        )
+        try:
+            result = await executor.execute_attack(
+                method=endpoint.get("method", "GET"),
+                path=endpoint.get("path"),
+                payload=attack.get("payload"),
+            )
+        except Exception:
+            logger.exception("Attack execution failed for %s %s", endpoint.get("method"), endpoint.get("path"))
+            continue
         
         finding = analyzer.analyze(
             response_body=result.get("response_body", ""),
