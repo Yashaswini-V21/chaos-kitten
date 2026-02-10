@@ -67,10 +67,14 @@ async def execute_and_analyze(state: AgentState, executor: Executor) -> dict:
     new_findings = []
 
     for attack in state["planned_attacks"]:
+        endpoint_path = endpoint.get("path")
+        if not endpoint_path:
+            logger.warning("Skipping attack - endpoint missing path: %s", endpoint)
+            continue
         try:
             result = await executor.execute_attack(
                 method=endpoint.get("method", "GET"),
-                path=endpoint.get("path"),
+                path=endpoint_path,
                 payload=attack.get("payload"),
             )
         except Exception:
