@@ -2,11 +2,12 @@
 
 This guide is for developers who want to contribute to Chaos Kitten or extend it with new attack profiles, payload libraries, and runtime capabilities.
 
-If you're just trying to run Chaos Kitten against an API, start with:
+If you're new to the repo, skim the README first. For deeper dives, start with:
 
-- [`docs/getting_started.md`](./getting_started.md)
-- [`docs/architecture.md`](./architecture.md)
-- [`CONTRIBUTING.md`](../CONTRIBUTING.md)
+- [`README.md`](../README.md) (overview and quickstart)
+- [`docs/getting_started.md`](./getting_started.md) (local install and first scan)
+- [`docs/architecture.md`](./architecture.md) (how the runtime fits together)
+- [`CONTRIBUTING.md`](../CONTRIBUTING.md) and [`docs/contributing_guide.md`](./contributing_guide.md) (contribution workflow)
 
 ## Table of contents
 
@@ -45,6 +46,8 @@ chaos-kitten
 
 For more detail (including a fuller diagram and data flow), see [`docs/architecture.md`](./architecture.md).
 
+Note: Some extension areas (LLM-driven planning and browser-based validation) are under active development and may evolve quickly. If you're building a large feature in those areas, check the issue tracker first to avoid duplicating ongoing work.
+
 ## Local development setup
 
 ### Prerequisites
@@ -64,6 +67,9 @@ cd chaos-kitten
 
 python -m venv .venv
 source .venv/bin/activate
+
+# On Windows (PowerShell):
+# .\.venv\Scripts\Activate.ps1
 
 python -m pip install -U pip
 python -m pip install -e '.[dev]'
@@ -87,6 +93,8 @@ The config loader also expands `${VARNAME}` syntax inside `chaos-kitten.yaml` (s
 
 Note: The CLI does not automatically load a `.env` file. If you prefer `.env`, load it into your shell (for example via `direnv`, your IDE, or your task runner).
 
+The canonical list of dependencies and dev tooling is in `pyproject.toml`.
+
 ### Run tests
 
 ```bash
@@ -105,7 +113,7 @@ pytest
 - `chaos_kitten/brain/`
   - `openapi_parser.py`: parses OpenAPI 3.x and Swagger 2.0 into a normalized list of endpoints.
   - `orchestrator.py`: LangGraph-based scan loop (parse → plan → execute/analyze → report).
-  - `attack_planner.py`: attack planning (currently a rule-based stub; intended to load `toys/*.yaml`).
+  - `attack_planner.py`: attack planning (currently rule-based; extension point for loading/selecting `toys/*.yaml`).
   - `response_analyzer.py`: heuristics/regex-based response analysis into typed findings.
 - `chaos_kitten/paws/`
   - `executor.py`: async HTTP executor using `httpx`.
@@ -167,6 +175,8 @@ Report formats currently supported by the reporter are:
 - `json`
 - `sarif`
 
+For the full contributor workflow (formatting, linting, type-checking, tests), see [Code style and testing expectations](#code-style-and-testing-expectations).
+
 ## API usage
 
 Chaos Kitten is importable as a Python library. The most direct entrypoint today is the Brain `Orchestrator`.
@@ -188,10 +198,24 @@ results = asyncio.run(Orchestrator(config).run())
 print(results["summary"])
 ```
 
+To reuse the same YAML config loading logic as the CLI:
+
+```python
+import asyncio
+
+from chaos_kitten.brain.orchestrator import Orchestrator
+from chaos_kitten.utils.config import Config
+
+config = Config("chaos-kitten.yaml").load()
+results = asyncio.run(Orchestrator(config).run())
+print(results["summary"])
+```
+
 Notes for extenders:
 
+- The library-level API is still evolving; treat imports like `Orchestrator` as internal building blocks rather than a stable public API.
 - `Orchestrator` currently instantiates `Executor(base_url=...)` without wiring auth/settings from config. If you're implementing auth, start by threading `target.auth.*` (and executor settings like timeouts/rate limits) into `Executor` construction.
-- Attack planning is currently rule-based in `AttackPlanner.plan_attacks`. Loading and selecting YAML profiles from `toys/` is an intended extension point.
+- Attack planning is currently rule-based in `AttackPlanner.plan_attacks`. YAML attack profiles in `toys/` are not auto-loaded during a scan yet.
 
 ## Adding new attack profiles (YAML)
 
@@ -247,6 +271,8 @@ remediation: |
 
 ### How profiles are used in code
 
+Currently, profiles are not auto-loaded from `toys/` during a scan. Adding a YAML file is the first step, but wiring it into planning/analysis is still manual.
+
 The long-term intention is for `chaos_kitten/brain/attack_planner.py` to:
 
 1. load YAML profiles from `toys/`
@@ -301,6 +327,12 @@ diff --git a/toys/data/naughty_strings.json b/toys/data/naughty_strings.json
    }
 ```
 
+After editing, validate the JSON (this catches missing commas and escaping errors):
+
+```bash
+python -m json.tool toys/data/naughty_strings.json > /dev/null
+```
+
 ## LLM debugging tips
 
 LLM-driven planning is under active development. Today, the scan loop is primarily:
@@ -316,6 +348,7 @@ Practical debugging tips:
 
 1. Make runs deterministic while debugging.
    - Set your model temperature to `0` (in config) once LLM planning is wired in.
+   - The config template created by `chaos-kitten init` includes `agent.llm_provider`, `agent.model`, `agent.temperature`, and `agent.max_iterations`.
 2. Reduce the blast radius.
    - Run against the demo API (`examples/demo_api`) and keep to a small spec.
 3. Log prompts and decisions.
@@ -341,6 +374,15 @@ Recommended local commands:
 black .
 ruff check .
 mypy chaos_kitten
+```
+
+Before opening a PR, run:
+
+```bash
+black .
+ruff check .
+mypy chaos_kitten
+pytest
 ```
 
 ### Testing
@@ -412,3 +454,9 @@ If you installed `.[browser]`, ensure you also installed the browser binaries:
 ```bash
 python -m playwright install
 ```
+
+### Test failures / CI failures
+
+- Re-run the failing test with more output: `pytest -vv`.
+- If you changed CLI behavior, run the integration test: `pytest -vv tests/test_integration_scan.py`.
+- If CI fails on formatting or linting, run the exact local commands in [Code style and testing expectations](#code-style-and-testing-expectations).
