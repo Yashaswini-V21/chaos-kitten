@@ -9,9 +9,40 @@ from langchain_community.chat_models import ChatOllama
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 logger=logging.getLogger(__name__)
-ATTACK_PLANNING_PROMPT =""
-PAYLOAD_SUGGESTION_PROMPT=""
-REASONING_PROMPT = ""
+
+ATTACK_PLANNING_PROMPT = """You are a security expert analyzing an API endpoint for vulnerabilities.
+Endpoint: {method} {path}
+Parameters: {parameters}
+Request Body: {body}
+
+Analyze this endpoint and suggest attack vectors. Consider:
+1. Parameter types and names (id, user, query suggest different attacks)
+2. HTTP method (POST/PUT more likely to have injection points)
+3. Authentication requirements
+
+Return a prioritized list of attacks to try. 
+You must respond ONLY with a valid JSON array of objects. Do not include markdown formatting or explanations outside the JSON.
+Each object must have the following keys:
+- "type" (string, e.g., "sql_injection", "xss", "idor", "path_traversal")
+- "name" (string, short name of the attack)
+- "description" (string, what the attack does)
+- "payload" (dict or string, the actual payload to send)
+- "target_param" (string, the parameter or body field to target)
+- "expected_status" (integer, expected HTTP status if vulnerable, e.g., 500)
+- "priority" (string, "high", "medium", or "low")
+"""
+
+PAYLOAD_SUGGESTION_PROMPT = """You are an expert penetration tester.
+Given the attack type '{attack_type}' and the context of the endpoint '{context}',
+suggest a list of 5 specific, creative payloads to test for vulnerabilities.
+
+Respond ONLY with a valid JSON array of strings representing the payloads. Do not include markdown blocks.
+"""
+
+REASONING_PROMPT = """You are an API security tester.
+How would you test a field named '{field_name}' of type '{field_type}' for vulnerabilities?
+Provide a concise, 1-2 sentence reasoning."""
+
 class AttackPlanner:
     """Plan attacks based on API structure and context.
     
@@ -63,7 +94,7 @@ class AttackPlanner:
         Returns:
             List of planned attacks with payloads and expected behaviors
         """
-        # MVP: Simple rule-based stub
+        
         
         path = endpoint.get("path", "")
         method = endpoint.get("method", "GET")
