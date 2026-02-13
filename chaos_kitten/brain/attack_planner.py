@@ -1,4 +1,9 @@
-"""Attack Planner - Uses Chain-of-Thought reasoning to plan attacks."""
+import glob
+import logging
+import os
+import re
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 from typing import Any
 import logging
@@ -9,6 +14,23 @@ from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 logger=logging.getLogger(__name__)
+import yaml
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class AttackProfile:
+    """Represents a loaded attack profile from a YAML file."""
+    name: str
+    category: str
+    severity: str
+    description: str
+    payloads: List[str]
+    target_fields: List[str]
+    success_indicators: Dict[str, Any]
+    remediation: str = ""
+    references: List[str] = field(default_factory=list)
 
 ATTACK_PLANNING_PROMPT = """You are a security expert analyzing an API endpoint for vulnerabilities.
 Endpoint: {method} {path}
@@ -78,20 +100,86 @@ class AttackPlanner:
         else:
             logger.warning(f"Unknown LLM provider {self.llm_provider}. Falling back to Claude.")
             return ChatAnthropic(model="claude-3-5-sonnet-20241022", temperature=self.temperature)
-    def load_attack_profiles(self) -> None:
-        """Load all attack profiles from the toys directory."""
-        # TODO: Load YAML files from toys/
-        # raise NotImplementedError("Attack profile loading not yet implemented")
+        self.attack_profiles: List[AttackProfile] = []
+        
+        # Configure logging if not already configured
+        # Note: Library code should generally not call basicConfig().
+        # Leaving this to the application entry point.
         pass
     
-    def plan_attacks(self, endpoint: dict[str, Any]) -> list[dict[str, Any]]:
+    def load_attack_profiles(self) -> None:
+        """Load all attack profiles from the toys directory."""
+        search_path = os.path.join(self.toys_path, "*.yaml")
+        yaml_files = glob.glob(search_path)
+        
+        if not yaml_files:
+            logger.warning(f"No attack profiles found in {self.toys_path}")
+            return
+
+        for file_path in yaml_files:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+                
+                if not data:
+                    logger.warning(f"Skipping empty file: {file_path}")
+                    continue
+                    
+                # Basic validation of required fields
+                required_fields = ["name", "category", "severity", "payloads", "target_fields"]
+                missing = [field for field in required_fields if field not in data]
+                
+                if missing:
+                    logger.warning(f"Skipping {file_path}: Missing required fields {missing}")
+                    continue
+
+                profile = AttackProfile(
+                    name=data["name"],
+                    category=data["category"],
+                    severity=data["severity"],
+                    description=data.get("description", ""),
+                    payloads=data["payloads"],
+                    target_fields=data["target_fields"],
+                    success_indicators=data.get("success_indicators", {}),
+                    remediation=data.get("remediation", ""),
+                    references=data.get("references", [])
+                )
+                self.attack_profiles.append(profile)
+                logger.debug(f"Loaded attack profile: {profile.name}")
+                
+            except Exception as e:
+                logger.error(f"Failed to load attack profile from {file_path}: {e}")
+        
+        logger.info(f"Loaded {len(self.attack_profiles)} attack profiles")
+    
+    def plan_attacks(self, endpoint: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Plan attacks for a specific endpoint.
         
         Args:
-            endpoint: Endpoint definition from OpenAPI parser
+            endpoint: Endpoint definition from OpenAPI parser.
+                      Expected structure:
+                      {
+                          "path": "/api/login",
+                          "method": "post",
+                          "parameters": [...],
+                          "requestBody": {...} 
+                      }
             
         Returns:
-            List of planned attacks with payloads and expected behaviors
+            List of planned attacks with payloads and expected behaviors:
+            [
+                {
+                    "profile_name": str,
+                    "endpoint": str,
+                    "method": str,
+                    "field": str,
+                    "location": str (query/path/body),
+                    "payloads": list[str],
+                    "expected_indicators": dict,
+                    "severity": str
+                },
+                ...
+            ]
         """
         
         

@@ -1,9 +1,14 @@
 """HTTP Executor - Async HTTP client for executing attacks."""
 
-from typing import Any
+import asyncio
+import logging
+import time
+from typing import Any, Dict, Optional, Union
 import httpx
 import asyncio
 import time
+
+logger = logging.getLogger(__name__)
 
 
 class Executor:
@@ -21,7 +26,7 @@ class Executor:
         self,
         base_url: str,
         auth_type: str = "none",
-        auth_token: str | None = None,
+        auth_token: Optional[str] = None,
         rate_limit: int = 10,
         timeout: int = 30,
     ) -> None:
@@ -46,7 +51,9 @@ class Executor:
         self.auth_token = auth_token
         self.rate_limit = rate_limit
         self.timeout = timeout
-        self._client: httpx.AsyncClient | None = None
+        self._client: Optional[httpx.AsyncClient] = None
+        self._rate_limiter: Optional[asyncio.Semaphore] = None
+        self._last_request_time: float = 0.0
     
     async def __aenter__(self) -> "Executor":
         """Context manager entry."""
@@ -55,6 +62,8 @@ class Executor:
             timeout=self.timeout,
             headers=self._build_headers(),
         )
+        # Initialize rate limiter semaphore
+        self._rate_limiter = asyncio.Semaphore(self.rate_limit)
         return self
     
     async def __aexit__(self, *args: Any) -> None:
@@ -62,7 +71,7 @@ class Executor:
         if self._client:
             await self._client.aclose()
     
-    def _build_headers(self) -> dict[str, str]:
+    def _build_headers(self) -> Dict[str, str]:
         """Build request headers including authentication."""
         headers = {"User-Agent": "ChaosKitten/0.1.0"}
         
@@ -77,9 +86,9 @@ class Executor:
         self,
         method: str,
         path: str,
-        payload: dict[str, Any] | None = None,
-        headers: dict[str, str] | None = None,
-    ) -> dict[str, Any]:
+        payload: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """Execute an attack request.
         
         Args:
@@ -92,52 +101,130 @@ class Executor:
             Response data including status, body, and timing
         """
         if not self._client:
-            raise RuntimeError("Executor context not initialized. Use 'async with' block.")
-
-        url = path.lstrip("/")
-        max_retries = 2
-        # Rate Limiting
-        if self.rate_limit > 0:
-            await asyncio.sleep(1.0 / self.rate_limit)
+            return {
+                "status_code": 0,
+                "headers": {},
+                "body": "",
+                "elapsed_ms": 0.0,
+                "error": "Client not initialized. Use 'async with Executor(...)' pattern.",
+            }
         
-        # Merge headers
-        # Start timing
-        for attempt in range(max_retries + 1):
-            start_time = time.monotonic()
-            
-            try:
-                # Handle different payload types based on method usually, 
-                # but httpx handles 'json' or 'data' or 'params'
-                
-                kwargs = {}
-                if headers:
-                    kwargs["headers"] = headers
-                
-                if payload is not None:
-                    if method.upper() in ["POST", "PUT", "PATCH"]:
-                        kwargs["json"] = payload
-                    else:
-                        kwargs["params"] = payload
-                    
-                response = await self._client.request(method, url, **kwargs)
-                elapsed_ms =  int((time.monotonic() - start_time) * 1000)
-                
+        # Apply rate limiting
+        await self._apply_rate_limit()
+        
+        # Merge additional headers
+        request_headers = self._client.headers.copy()
+        if headers:
+            request_headers.update(headers)
+        
+        # Prepare request parameters
+        method = method.upper()
+        start_time = time.perf_counter()
+        
+        try:
+            # Execute request based on method
+            if method == "GET":
+                response = await self._client.get(
+                    path,
+                    params=payload,
+                    headers=request_headers,
+                )
+            elif method in ("POST", "PUT", "PATCH"):
+                response = await self._client.request(
+                    method,
+                    path,
+                    json=payload,
+                    headers=request_headers,
+                )
+            elif method == "DELETE":
+                response = await self._client.delete(
+                    path,
+                    headers=request_headers,
+                )
+            else:
                 return {
-                    "status_code": response.status_code,
-                    "response_body": response.text,
-                    "elapsed_ms": elapsed_ms,
-                    "headers": dict(response.headers),
-                    "url": str(response.url)
+                    "status_code": 0,
+                    "headers": {},
+                    "body": "",
+                    "elapsed_ms": 0.0,
+                    "error": f"Unsupported HTTP method: {method}",
                 }
-                
-            except httpx.RequestError as e:
-                elapsed_ms = int((time.monotonic() - start_time) * 1000)
-                if attempt == max_retries:
-                    return {
-                        "status_code": 0,
-                        "error": str(e),
-                        "elapsed_ms": elapsed_ms,
-                        "response_body": "",
-                        "url": url
-                    }
-            await asyncio.sleep(0.5)
+            
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            
+            return {
+                "status_code": response.status_code,
+                "headers": dict(response.headers),
+                "body": response.text,
+                "elapsed_ms": elapsed_ms,
+                "error": None,
+            }
+            
+        except httpx.TimeoutException as e:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            error_msg = f"Request timeout: {str(e)}"
+            logger.warning(f"Timeout executing {method} {path}: {e}")
+            return {
+                "status_code": 0,
+                "headers": {},
+                "body": "",
+                "elapsed_ms": elapsed_ms,
+                "error": error_msg,
+            }
+            
+        except httpx.ConnectError as e:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            error_msg = f"Connection error: {str(e)}"
+            logger.warning(f"Connection error executing {method} {path}: {e}")
+            return {
+                "status_code": 0,
+                "headers": {},
+                "body": "",
+                "elapsed_ms": elapsed_ms,
+                "error": error_msg,
+            }
+            
+        except httpx.HTTPError as e:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            error_msg = f"HTTP error: {str(e)}"
+            logger.warning(f"HTTP error executing {method} {path}: {e}")
+            return {
+                "status_code": 0,
+                "headers": {},
+                "body": "",
+                "elapsed_ms": elapsed_ms,
+                "error": error_msg,
+            }
+            
+        except Exception as e:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            error_msg = f"Unexpected error: {str(e)}"
+            logger.warning(f"Unexpected error executing {method} {path}: {e}")
+            return {
+                "status_code": 0,
+                "headers": {},
+                "body": "",
+                "elapsed_ms": elapsed_ms,
+                "error": error_msg,
+            }
+    
+    async def _apply_rate_limit(self) -> None:
+        """Apply rate limiting using token bucket algorithm."""
+        if not self._rate_limiter:
+            return
+        
+        # Acquire semaphore token
+        async with self._rate_limiter:
+            # Calculate time since last request
+            current_time = time.perf_counter()
+            time_since_last = current_time - self._last_request_time
+            
+            # Minimum time between requests (in seconds)
+            min_interval = 1.0 / self.rate_limit if self.rate_limit > 0 else 0
+            
+            # Sleep if we're going too fast
+            if time_since_last < min_interval:
+                await asyncio.sleep(min_interval - time_since_last)
+            
+            # Update last request time
+            self._last_request_time = time.perf_counter()
