@@ -6,7 +6,7 @@ import json
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_community.chat_models import ChatOllama
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 logger=logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class AttackPlanner:
         self.endpoints = endpoints
         self.toys_path = toys_path
         self.attack_profiles: list[dict[str, Any]] = []
-
+        self._cache: dict[str, Any] = {}
         self.llm_provider=llm_provider.lower()
         self.temperature=temperature
         self.llm=self._init_llm()
@@ -72,7 +72,7 @@ class AttackPlanner:
         if self.llm_provider=='anthropic':
             return ChatAnthropic(model="claude-3-5-sonnet-20241022",temperature=self.temperature)
         elif self.llm_provider=='openai':
-            return ChatOpenAI(model="gpt-5.2",temperature=self.temperature)
+            return ChatOpenAI(model="gpt-4",temperature=self.temperature)
         elif self.llm_provider == "ollama":
             return ChatOllama(model="llama3.1", temperature=self.temperature)
         else:
