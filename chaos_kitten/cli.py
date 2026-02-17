@@ -227,6 +227,15 @@ def scan(
         raise typer.Exit(code=1)
 
 @app.command()
+def interactive():
+    """Start interactive mode."""
+    from chaos_kitten.console.repl import ChaosREPL
+    import asyncio
+    
+    repl = ChaosREPL(console)
+    asyncio.run(repl.start())
+
+@app.command()
 def meow():
     """🐱 Meow!"""
     console.print(Panel(ASCII_CAT, title="🐱 Meow!", border_style="magenta"))
