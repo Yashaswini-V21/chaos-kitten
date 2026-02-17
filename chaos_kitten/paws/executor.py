@@ -87,6 +87,7 @@ class Executor:
         method: str,
         path: str,
         payload: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """Execute an attack request.
@@ -95,6 +96,8 @@ class Executor:
             method: HTTP method (GET, POST, etc.)
             path: API endpoint path
             payload: Request body/parameters
+            files: Files to upload (for multipart/form-data)
+                   Format: {'field_name': ('filename', content, 'content_type')}
             headers: Additional headers
             
         Returns:
@@ -130,12 +133,24 @@ class Executor:
                     headers=request_headers,
                 )
             elif method in ("POST", "PUT", "PATCH"):
-                response = await self._client.request(
-                    method,
-                    path,
-                    json=payload,
-                    headers=request_headers,
-                )
+                # Handle multipart/form-data vs json
+                if files:
+                    # If files are present, payload usually goes into 'data' form fields
+                    # httpx handles boundary and content-type for files automatically
+                    response = await self._client.request(
+                        method,
+                        path,
+                        data=payload, # Form fields
+                        files=files,  # File uploads
+                        headers=request_headers,
+                    )
+                else:
+                    response = await self._client.request(
+                        method,
+                        path,
+                        json=payload,
+                        headers=request_headers,
+                    )
             elif method == "DELETE":
                 response = await self._client.delete(
                     path,
@@ -172,41 +187,42 @@ class Executor:
                 "error": error_msg,
             }
             
+        # ... (rest of exception handling remains similar, ensuring closing indent)
         except httpx.ConnectError as e:
-            elapsed_ms = (time.perf_counter() - start_time) * 1000
-            error_msg = f"Connection error: {str(e)}"
-            logger.warning(f"Connection error executing {method} {path}: {e}")
-            return {
-                "status_code": 0,
-                "headers": {},
-                "body": "",
-                "elapsed_ms": elapsed_ms,
-                "error": error_msg,
-            }
-            
+             elapsed_ms = (time.perf_counter() - start_time) * 1000
+             error_msg = f"Connection error: {str(e)}"
+             logger.warning(f"Connection error executing {method} {path}: {e}")
+             return {
+                 "status_code": 0,
+                 "headers": {},
+                 "body": "",
+                 "elapsed_ms": elapsed_ms,
+                 "error": error_msg,
+             }
+             
         except httpx.HTTPError as e:
-            elapsed_ms = (time.perf_counter() - start_time) * 1000
-            error_msg = f"HTTP error: {str(e)}"
-            logger.warning(f"HTTP error executing {method} {path}: {e}")
-            return {
-                "status_code": 0,
-                "headers": {},
-                "body": "",
-                "elapsed_ms": elapsed_ms,
-                "error": error_msg,
-            }
-            
+             elapsed_ms = (time.perf_counter() - start_time) * 1000
+             error_msg = f"HTTP error: {str(e)}"
+             logger.warning(f"HTTP error executing {method} {path}: {e}")
+             return {
+                 "status_code": 0,
+                 "headers": {},
+                 "body": "",
+                 "elapsed_ms": elapsed_ms,
+                 "error": error_msg,
+             }
+             
         except Exception as e:
-            elapsed_ms = (time.perf_counter() - start_time) * 1000
-            error_msg = f"Unexpected error: {str(e)}"
-            logger.warning(f"Unexpected error executing {method} {path}: {e}")
-            return {
-                "status_code": 0,
-                "headers": {},
-                "body": "",
-                "elapsed_ms": elapsed_ms,
-                "error": error_msg,
-            }
+             elapsed_ms = (time.perf_counter() - start_time) * 1000
+             error_msg = f"Unexpected error: {str(e)}"
+             logger.warning(f"Unexpected error executing {method} {path}: {e}")
+             return {
+                 "status_code": 0,
+                 "headers": {},
+                 "body": "",
+                 "elapsed_ms": elapsed_ms,
+                 "error": error_msg,
+             }
     
     async def _apply_rate_limit(self) -> None:
         """Apply rate limiting using token bucket algorithm."""

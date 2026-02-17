@@ -156,9 +156,41 @@ class AttackPlanner:
 
         # Iterate through loaded profiles and find matches
         for profile in self.attack_profiles:
-            # Simple heuristic: matching Method semantics
-            # Injection attacks usually on POST/PUT body or GET query params
-            # This is a simplification; a real scanner would be more comprehensive.
+            # Special handling for file upload profile
+            if profile.name == "File Upload Bypass":
+                # Check if endpoint accepts multipart/form-data
+                request_body = endpoint.get("requestBody") or {}
+                content = request_body.get("content", {})
+                if "multipart/form-data" in content or "application/octet-stream" in content:
+                    # Find file fields
+                    schema = content.get("multipart/form-data", {}).get("schema", {}) or \
+                             content.get("application/octet-stream", {}).get("schema", {})
+                    
+                    properties = schema.get("properties", {})
+                    for prop_name, prop_details in properties.items():
+                        # Heuristic: verify if it looks like a file upload
+                        # OpenAPI 3.0: type: string, format: binary
+                        p_type = prop_details.get("type")
+                        p_format = prop_details.get("format")
+                        
+                        is_file = (p_type == "string" and p_format in ("binary", "base64")) or \
+                                  (prop_name.lower() in profile.target_fields)
+
+                        if is_file:
+                            attack_plan = {
+                                "profile_name": profile.name,
+                                "endpoint": endpoint_path,
+                                "method": method,
+                                "field": prop_name,
+                                "location": "file", # Special location for executor
+                                "payloads": profile.payloads,
+                                "expected_indicators": profile.success_indicators,
+                                "severity": profile.severity
+                            }
+                            planned_attacks.append(attack_plan)
+                continue
+
+            # ... (Standard logic for other profiles)
             
             for field_info in targetable_fields:
                 field_name = field_info["name"]
