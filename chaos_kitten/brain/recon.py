@@ -180,6 +180,7 @@ class ReconEngine:
         """
         fingerprints = {}
         try:
+            logger.warning("TLS verification disabled for technology fingerprinting - man-in-the-middle risk in untrusted networks")
             with httpx.Client(verify=False, timeout=self.timeout, follow_redirects=True) as client:
                 response = client.get(url)
                 headers = {k.lower(): v for k, v in response.headers.items()}
@@ -211,7 +212,7 @@ class ReconEngine:
                      fingerprints.setdefault("frontend", []).append("Vue.js")
 
         except httpx.RequestError as e:
-            # logger.debug(f"Could not connect to {url} for fingerprinting: {e}")
+            logger.debug(f"Could not connect to {url} for fingerprinting: {e}")
             pass
             
         return fingerprints

@@ -1,5 +1,6 @@
 """The Brain Orchestrator - Main agent logic using LangGraph."""
 
+import asyncio
 import json
 import logging
 from functools import partial
@@ -44,11 +45,15 @@ class AgentState(TypedDict):
     recon_results: Dict[str, Any]
 
 
-def run_recon(state: AgentState, config: Dict[str, Any]) -> Dict[str, Any]:
+async def run_recon(state: AgentState, config: Dict[str, Any]) -> Dict[str, Any]:
     console.print("[bold blue]🔍 Starting Reconnaissance Phase...[/bold blue]")
     try:
         engine = ReconEngine(config)
-        results = engine.run()
+        
+        # Run recon engine in an executor to avoid blocking the async loop
+        loop = asyncio.get_running_loop()
+        results = await loop.run_in_executor(None, engine.run)
+
         if results:
             subs = len(results.get('subdomains', []))
             techs = len(results.get('technologies', {}))
