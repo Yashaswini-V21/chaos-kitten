@@ -53,24 +53,16 @@ payloads:
   - "11111111-1111-1111-1111-111111111111"
   - "a8098c1a-f86e-11da-bd1a-00112444be1e"
   - "123e4567-e89b-12d3-a456-426614174000"
-  
-  # Path traversal variants
-  - "../1"
-  - "../../admin"
-  - "..%2F1"
-  - "%2e%2e%2f1"
 
 # Indicators that suggest successful IDOR exploitation
+# NOTE: Successful IDOR is primarily detected by id-mismatch (e.g., user requests id=2 but
+# authenticated as user=1 and receives id=2's data). response_contains checks for fields that
+# should NEVER appear in a properly-scoped response.
 success_indicators:
   response_contains:
-    - "email"
-    - "username"
-    - "password"
-    - "account_balance"
-    - "credit_card"
-    - "ssn"
-    - "private"
-    - "confidential"
+    - "ssn"           # Social Security Number - highly sensitive
+    - "credit_card"   # Payment card data - should never leak
+    - "driver_license" # Government ID - unauthorized access
   
   status_codes:
     - 200  # Successful access when should be 403/401
@@ -120,7 +112,8 @@ remediation: |
 
 references:
   - "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
-  - "https://cwe.mitre.org/data/definitions/639.html"
+  - "https://cwe.mitre.org/data/definitions/639.html"  # Insecure Direct Object Reference
+  - "https://cwe.mitre.org/data/definitions/285.html"  # Improper Authorization (vertical privilege escalation)
   - "https://portswigger.net/web-security/access-control/idor"
   - "https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html"
 
