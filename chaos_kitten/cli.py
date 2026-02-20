@@ -161,9 +161,19 @@ def scan(
         from chaos_kitten.brain.orchestrator import Orchestrator
         import asyncio
         
-        # Load config
-        config_obj = Config(config)
-        cfg = config_obj.load()
+        # Load config (or construct a minimal one for demo mode without a config file)
+        if demo and not config:
+            # Minimal default configuration for demo mode when no config file is provided
+            cfg = {
+                "target": {
+                    "base_url": target,
+                    "openapi_spec": spec,
+                },
+                "reporting": {},
+            }
+        else:
+            config_obj = Config(config)
+            cfg = config_obj.load()
         
         # Override with CLI args
         if target:
