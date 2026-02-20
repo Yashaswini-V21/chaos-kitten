@@ -2,7 +2,7 @@
 # This file defines payloads for testing business logic vulnerabilities
 
 name: "Business Logic Abuse"
-category: "business-logic"
+category: "business_logic"
 severity: "high"
 description: "Tests for common business logic flaws including price manipulation, quantity abuse, workflow bypass, and race conditions"
 
@@ -132,11 +132,23 @@ payloads:
   # Simple duplicate transaction IDs to simulate parallel requests if the engine supports it
   - "RACE-CONDITION-TEST-ID-1"
   - "RACE-CONDITION-TEST-ID-1"
+  
+  # Multiple use of single-use tokens/coupons
+  - "SINGLE_USE_COUPON_123"
+  - "SINGLE_USE_COUPON_123"
+  - "GIFT_CARD_XYZ_50"
+  - "GIFT_CARD_XYZ_50"
+
+  # Insufficient funds transfer attempts
+  - "TRANSFER_ID_9999"
+  - "TRANSFER_ID_9999"
+
 
   # --- Discount/Coupon Abuse ---
   # Stacking coupons (simple reuse attempt)
   - "SAVE10"
   - "WELCOME20"
+  - "SAVE10 SAVE10" # space-separated hint for tools that accept multi-value fields
   # Note: To test true stacking (applying multiple coupons), the engine would need multi-step scenario support.
   
   # expired or dev/test codes
