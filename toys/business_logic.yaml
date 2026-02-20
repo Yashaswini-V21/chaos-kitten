@@ -27,14 +27,18 @@ target_fields:
   - "credits"
 
 success_indicators:
-  - "transaction accepted with negative value"
-  - "free purchase successful"
-  - "limit bypassed"
-  - "workflow step skipped"
-  - "unauthorized status change"
-  - "inventory did not decrease"
-  - "balance increased instead of decreased"
-  - "double spending successful"
+  response_contains:
+    - "transaction accepted with negative value"
+    - "free purchase successful"
+    - "limit bypassed"
+    - "workflow step skipped"
+    - "unauthorized status change"
+    - "inventory did not decrease"
+    - "balance increased instead of decreased"
+    - "double spending successful"
+  status_codes:
+    - 200
+    - 201
 
 # Attack payloads to test
 payloads:
@@ -77,11 +81,9 @@ payloads:
   
   # --- Quantity/Limit Abuse ---
   # Negative quantity (adding back to inventory or getting refund)
-  - "quantity: -1"
-  - "qty: -5"
+  - "-5"   # negative quantity (already covered by -1/-100 above, but qty context)
   
   # Zero quantity
-  - "quantity: 0"
   
   # Exceeding typical limits (bulk abuse)
   - "999"
@@ -125,10 +127,17 @@ payloads:
   - ""
   - "null"
 
+  # --- Race Conditions ---
+  # NOTE: requires parallel request harness to execute properly
+  # Simple duplicate transaction IDs to simulate parallel requests if the engine supports it
+  - "RACE-CONDITION-TEST-ID-1"
+  - "RACE-CONDITION-TEST-ID-1"
+
   # --- Discount/Coupon Abuse ---
-  # Stacking coupons
-  - ["SAVE10", "SAVE10"]
-  - ["SAVE10", "WELCOME20"]
+  # Stacking coupons (simple reuse attempt)
+  - "SAVE10"
+  - "WELCOME20"
+  # Note: To test true stacking (applying multiple coupons), the engine would need multi-step scenario support.
   
   # expired or dev/test codes
   - "DEV_100_OFF"
@@ -196,7 +205,7 @@ remediation: |
       return {"status": "success", "total": total_cost}
 
 references:
-  - "https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control"
+  - "https://owasp.org/Top10/A04_2021-Insecure_Design/"
   - "https://owasp.org/www-community/vulnerabilities/Business_logic_vulnerability"
   - "https://cwe.mitre.org/data/definitions/840.html"
   - "https://portswigger.net/web-security/logic-flaws"
