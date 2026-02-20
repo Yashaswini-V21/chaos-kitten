@@ -1,6 +1,6 @@
 """Attack Planner - Uses Chain-of-Thought reasoning to plan attacks."""
 
-from typing import Any
+from typing import Any, Dict, List
 
 
 class AttackPlanner:
@@ -13,7 +13,7 @@ class AttackPlanner:
     - Adapt based on responses
     """
     
-    def __init__(self, endpoints: list[dict[str, Any]], toys_path: str = "toys/") -> None:
+    def __init__(self, endpoints: List[Dict[str, Any]], toys_path: str = "toys/") -> None:
         """Initialize the attack planner.
         
         Args:
@@ -22,14 +22,14 @@ class AttackPlanner:
         """
         self.endpoints = endpoints
         self.toys_path = toys_path
-        self.attack_profiles: list[dict[str, Any]] = []
+        self.attack_profiles: List[Dict[str, Any]] = []
     
     def load_attack_profiles(self) -> None:
         """Load all attack profiles from the toys directory."""
         # TODO: Load YAML files from toys/
         raise NotImplementedError("Attack profile loading not yet implemented")
     
-    def plan_attacks(self, endpoint: dict[str, Any]) -> list[dict[str, Any]]:
+    def plan_attacks(self, endpoint: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Plan attacks for a specific endpoint.
         
         Args:

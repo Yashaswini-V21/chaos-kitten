@@ -1,6 +1,6 @@
 """HTTP Executor - Async HTTP client for executing attacks."""
 
-from typing import Any
+from typing import Any, Dict, Optional, Union
 import httpx
 
 
@@ -19,7 +19,7 @@ class Executor:
         self,
         base_url: str,
         auth_type: str = "none",
-        auth_token: str | None = None,
+        auth_token: Optional[str] = None,
         rate_limit: int = 10,
         timeout: int = 30,
     ) -> None:
@@ -37,7 +37,7 @@ class Executor:
         self.auth_token = auth_token
         self.rate_limit = rate_limit
         self.timeout = timeout
-        self._client: httpx.AsyncClient | None = None
+        self._client: Optional[httpx.AsyncClient] = None
     
     async def __aenter__(self) -> "Executor":
         """Context manager entry."""
@@ -53,7 +53,7 @@ class Executor:
         if self._client:
             await self._client.aclose()
     
-    def _build_headers(self) -> dict[str, str]:
+    def _build_headers(self) -> Dict[str, str]:
         """Build request headers including authentication."""
         headers = {"User-Agent": "ChaosKitten/0.1.0"}
         
@@ -68,9 +68,9 @@ class Executor:
         self,
         method: str,
         path: str,
-        payload: dict[str, Any] | None = None,
-        headers: dict[str, str] | None = None,
-    ) -> dict[str, Any]:
+        payload: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """Execute an attack request.
         
         Args:

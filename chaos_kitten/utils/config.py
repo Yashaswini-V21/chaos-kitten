@@ -1,7 +1,7 @@
 """Configuration loader and validator."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Union
 import yaml
 import os
 
@@ -9,16 +9,20 @@ import os
 class Config:
     """Load and validate chaos-kitten.yaml configuration."""
     
-    def __init__(self, config_path: str | Path = "chaos-kitten.yaml") -> None:
+    def __init__(self, config_path: Union[str, Path] = "chaos-kitten.yaml") -> None:
         """Initialize config loader.
         
         Args:
             config_path: Path to configuration file
         """
-        self.config_path = Path(config_path)
-        self._config: dict[str, Any] = {}
-    
-    def load(self) -> dict[str, Any]:
+        self._config_path = Path(config_path)
+        self._config: Dict[str, Any] = {}
+    @property
+    def config_path(self) -> Path:
+        """Get path to configuration file."""
+        return self._config_path
+
+    def load(self) -> "Dict[str, Any]":
         """Load and validate configuration.
         
         Returns:
@@ -69,21 +73,26 @@ class Config:
             raise ValueError("Missing required field: target.base_url")
     
     @property
-    def target(self) -> dict[str, Any]:
+    def target(self) -> Dict[str, Any]:
         """Get target configuration."""
         return self._config.get("target", {})
     
     @property
-    def agent(self) -> dict[str, Any]:
+    def agent(self) -> Dict[str, Any]:
         """Get agent configuration."""
         return self._config.get("agent", {})
     
     @property
-    def executor(self) -> dict[str, Any]:
+    def executor(self) -> Dict[str, Any]:
         """Get executor configuration."""
         return self._config.get("executor", {})
     
     @property
-    def safety(self) -> dict[str, Any]:
+    def safety(self) -> Dict[str, Any]:
         """Get safety configuration."""
         return self._config.get("safety", {})
+    
+    @property
+    def checkpoint_path(self) -> Path:
+        """Get path to the checkpoint file."""
+        return Path(self._config.get("checkpoint_path", ".chaos-checkpoint.json"))

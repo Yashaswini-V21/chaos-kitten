@@ -121,6 +121,12 @@ def scan(
         "--demo",
         help="Run scan against the demo vulnerable API",
     ),
+    resume: bool = typer.Option(
+        False,
+        "--resume",
+        "-r",
+        help="Resume scan from last checkpoint",
+    ),
 ):
     """Scan an API for security vulnerabilities."""
     console.print(Panel(ASCII_CAT, title="🐱 Chaos Kitten", border_style="magenta"))
@@ -135,19 +141,41 @@ def scan(
         console.print()
 
     # Check for API keys if using LLM providers
+    # Check for API keys if using LLM providers
     import os
-    if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"):
-        console.print("[bold red]❌ I can't see![/bold red]")
-        console.print("I need an [bold]ANTHROPIC_API_KEY[/bold] or [bold]OPENAI_API_KEY[/bold] to plan my mischief.")
-        console.print("[dim]Please set one in your environment or .env file.[/dim]")
-        
-        if not demo:
-            raise typer.Exit(code=1)
-        else:
-            console.print("[yellow]⚠️  Proceeding anyway since we are in demo mode...[/yellow]")
+    if not demo and not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"):
+        console.print("[yellow]⚠️  No LLM API ID found (ANTHROPIC_API_KEY or OPENAI_API_KEY).[/yellow]")
+        console.print("[yellow]    Some features like attack planning might not work.[/yellow]")
+        # raise typer.Exit(code=1)
+    elif not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"):
+         console.print("[yellow]⚠️  Proceeding without API keys since we are in demo mode...[/yellow]")
     
-    # TODO: Implement actual scanning logic
-    console.print("[yellow]⚠️  Scanning logic is still under construction![/yellow]")
+    try:
+        from chaos_kitten.utils.config import Config
+        from chaos_kitten.brain.orchestrator import Orchestrator
+        import asyncio
+        
+        # Load config
+        config_obj = Config(config)
+        cfg = config_obj.load()
+        
+        # Override with CLI args
+        if target:
+            cfg["target"]["base_url"] = target
+        if spec:
+            cfg["target"]["openapi_spec"] = spec
+        if output:
+            cfg.setdefault("reporting", {})["output_path"] = output
+            
+        orchestrator = Orchestrator(cfg, resume=resume)
+        results = asyncio.run(orchestrator.run())
+        
+        # Generate report (mock for now)
+        console.print(f"\n📝 Generating {format} report in {output}...")
+        
+    except Exception as e:
+        console.print(f"[bold red]💥 Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)
     console.print(f"I was supposed to scan [bold]{target or 'the API'}[/bold]...")
     console.print(f"And save the [bold]{format}[/bold] report to [bold]{output}[/bold].")
     console.print()

@@ -62,6 +62,22 @@ ANTHROPIC_API_KEY=your_key_here
 chaos-kitten scan
 ```
 
+### 5. Resuming an Interrupted Scan
+
+If a long-running scan is interrupted (e.g., due to network issues or accidental closure), you can resume it from the last checkpoint:
+
+```bash
+chaos-kitten scan --resume
+```
+
+This will:
+- Load the last saved state from `.chaos-checkpoint.json`
+- Skip already completed attack profiles
+- Continue finding vulnerabilities where it left off
+
+> **Note:** Checkpoints are automatically invalidated if you change the configuration between runs.
+
+
 ## Understanding Results
 
 ### Severity Levels

@@ -1,10 +1,10 @@
 """Browser Automation - Playwright integration for XSS detection."""
 
-from typing import Any
+from typing import Any, Dict
 
 
 class BrowserAutomation:
-    """Headless browser for XSS validation.
+    """Headless browser for XSS detection.
     
     Uses Playwright to:
     - Inject XSS payloads into pages
@@ -38,7 +38,7 @@ class BrowserAutomation:
         url: str,
         payload: str,
         input_selector: str = "input",
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         """Test for XSS vulnerability.
         
         Args:
