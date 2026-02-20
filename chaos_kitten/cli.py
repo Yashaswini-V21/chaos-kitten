@@ -100,13 +100,13 @@ def scan(
         help="Path to OpenAPI spec (overrides config)",
     ),
     output: str = typer.Option(
-        "./reports",
+        None,
         "--output",
         "-o",
         help="Directory to save the security report",
     ),
     format: str = typer.Option(
-        "html",
+        None,
         "--format",
         "-f",
         help="Format of the report (html, markdown, json, sarif)",
@@ -190,14 +190,17 @@ def scan(
         console.print(f"\n📝 Generating {format} report in {output}...")
         
     except Exception as e:
-        console.print(f"[bold red]💥 Error:[/bold red] {str(e)}")
-        raise typer.Exit(code=1)
-    console.print(f"I was supposed to scan [bold]{target or 'the API'}[/bold]...")
-    console.print(f"And save the [bold]{format}[/bold] report to [bold]{output}[/bold].")
-    console.print()
-    console.print("🐾 [italic]But for now, I'm just stretching my paws![/italic]")
-    console.print("[dim]The full agentic brain will be integrated soon.[/dim]")
-    console.print()
+        console.print(f"[bold red]❌ Scan failed:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
+
+@app.command()
+def interactive():
+    """Start interactive mode."""
+    from chaos_kitten.console.repl import ChaosREPL
+    import asyncio
+    
+    repl = ChaosREPL(console)
+    asyncio.run(repl.start())
 
 @app.command()
 def meow():
