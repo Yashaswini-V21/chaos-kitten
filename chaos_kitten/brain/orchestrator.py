@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from functools import partial
 from typing import Any, Dict, List, Literal, TypedDict
 
 try:
@@ -132,7 +133,7 @@ async def execute_and_analyze(state: AgentState, executor: Executor) -> Dict[str
                     only_value if isinstance(only_value, str) else str(only_value)
                 )
             else:
-                payload_used = json.dumps(payload_obj, sort_keys=True, default=str)
+                payload_used = json.dumps(payload_obj, sort_keys=True, default=str, ensure_ascii=True)
         else:
             payload_used = str(payload_obj)
         
@@ -227,9 +228,53 @@ class Orchestrator:
             
         print(f"🚀 Starting scan against {target_url}")
         
-        # TODO: Implement the main agent loop with LangGraph
-        # For now, the standard scan is a placeholder
-        print("\n[Standard scan placeholder — agentic brain coming soon]")
+        if not HAS_LANGGRAPH:
+            print("⚠️  LangGraph not installed. Please install it to use the agentic brain.")
+            return {"vulnerabilities": [], "chaos_findings": []}
+
+        # Build the graph
+        workflow = StateGraph(AgentState)
+
+        # Nodes
+        workflow.add_node("recon", partial(run_recon, app_config=self.config))
+        workflow.add_node("parse", parse_openapi)
+        workflow.add_node("plan", plan_attacks)
+        
+        executor = Executor(self.config)
+        workflow.add_node("execute", partial(execute_and_analyze, executor=executor))
+
+        # Edges
+        workflow.add_edge(START, "recon")
+        workflow.add_edge("recon", "parse")
+        workflow.add_edge("parse", "plan")
+        workflow.add_edge("plan", "execute")
+
+        workflow.add_conditional_edges(
+            "execute",
+            should_continue,
+            {
+                "plan": "plan",
+                "end": END
+            }
+        )
+
+        app = workflow.compile()
+        
+        # Initial state
+        initial_state = {
+            "spec_path": self.config.get("target", {}).get("openapi_spec", ""),
+            "base_url": target_url,
+            "endpoints": [],
+            "current_endpoint": 0,
+            "planned_attacks": [],
+            "results": [],
+            "findings": [],
+            "recon_results": {}
+        }
+
+        # Run the agent
+        final_state = await app.ainvoke(initial_state)
+        self.vulnerabilities = final_state.get("findings", [])
 
         # Run chaos mode if enabled
         chaos_findings = []
