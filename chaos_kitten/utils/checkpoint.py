@@ -34,6 +34,9 @@ def save_checkpoint(data: CheckpointData, path: Union[str, Path]) -> None:
     try:
         with open(temp_path, "w") as f:
             json.dump(asdict(data), f, indent=2)
+            f.flush()
+            import os
+            os.fsync(f.fileno())
         temp_path.replace(path)
     except Exception:
         if temp_path.exists():
