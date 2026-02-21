@@ -56,6 +56,10 @@ class AgentState(TypedDict):
 async def run_recon(state: AgentState, app_config: Dict[str, Any]) -> Dict[str, Any]:
     # Renamed to app_config to avoid LangGraph collision
     console.print("[bold blue]🔍 Starting Reconnaissance Phase...[/bold blue]")
+    if state.get("recon_results"):
+        console.print("[yellow]⏭️ Skipping recon (results loaded from checkpoint)[/yellow]")
+        return {"recon_results": state["recon_results"]}
+        
     try:
         engine = ReconEngine(app_config)
         
@@ -312,6 +316,9 @@ class Orchestrator:
                     initial_state["findings"] = checkpoint.vulnerabilities
                     initial_state["current_endpoint"] = len(checkpoint.completed_profiles)
                     
+                    if getattr(checkpoint, "recon_results", None):
+                        initial_state["recon_results"] = checkpoint.recon_results
+                    
                     if initial_state["current_endpoint"] >= len(endpoints):
                         console.print("✨ [bold green]All endpoints already completed![/bold green]")
                         # Skip execution but proceed to summary
@@ -367,7 +374,8 @@ class Orchestrator:
                                     config_hash=calculate_config_hash(self.config),
                                     completed_profiles=completed_profiles,
                                     vulnerabilities=final_state["findings"],
-                                    timestamp=time.time()
+                                    timestamp=time.time(),
+                                    recon_results=final_state.get("recon_results", {})
                                 )
                                 save_checkpoint(checkpoint_data, self.checkpoint_path)
 
