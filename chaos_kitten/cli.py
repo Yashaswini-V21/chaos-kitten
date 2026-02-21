@@ -1,8 +1,11 @@
 """Chaos Kitten CLI - Command Line Interface."""
 
 import typer
+import logging
 from rich.console import Console
 from rich.panel import Panel
+
+logger = logging.getLogger(__name__)
 
 app = typer.Typer(
     name="chaos-kitten",
@@ -184,6 +187,8 @@ def scan(
             cfg.setdefault("target", {})["openapi_spec"] = spec
         if output:
             cfg.setdefault("reporting", {})["output_path"] = output
+        if provider:
+            cfg.setdefault("agent", {})["llm_provider"] = provider
             
         orchestrator = Orchestrator(cfg, chaos=chaos, chaos_level=chaos_level)
         results = asyncio.run(orchestrator.run())
@@ -207,6 +212,10 @@ def scan(
         
     except Exception as e:
         console.print(f"[bold red]💥 Error:[/bold red] {str(e)}")
+        # If it's not a FileNotFoundError, we might want to see the traceback
+        if not isinstance(e, FileNotFoundError):
+            import traceback
+            logger.debug(traceback.format_exc())
         raise typer.Exit(code=1)
     
     console.print()

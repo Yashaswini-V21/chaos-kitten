@@ -337,6 +337,7 @@ class Orchestrator:
         print(f"🚀 Starting scan against {target_url}")
         
         findings = []
+        final_state = {}
         if HAS_LANGGRAPH:
             # Build the graph
             workflow = StateGraph(AgentState)
@@ -351,7 +352,7 @@ class Orchestrator:
             workflow.add_edge("recon", "parse")
             workflow.add_edge("parse", "plan")
 
-            async with Executor(self.config) as executor:
+            async with Executor(self.config.get("target", {}).get("base_url")) as executor:
                 workflow.add_node("execute", partial(execute_and_analyze, executor=executor))
                 workflow.add_edge("plan", "execute")
 
@@ -402,7 +403,20 @@ class Orchestrator:
                 print("   High: {}".format(summary["by_severity"].get("high", 0)))
                 print("   Medium: {}".format(summary["by_severity"].get("medium", 0)))
             
+        # Prepare summary
+        total_endpoints = len(final_state.get("endpoints", [])) if final_state else 0
+        tested_endpoints = final_state.get("current_endpoint", 0) if final_state else 0
+        
+        # If LangGraph was skipped, we can still report total from config if we had parser data
+        # but for now, let's keep it simple and consistent with what was actually tested.
+
         return {
             "vulnerabilities": self.vulnerabilities,
             "chaos_findings": chaos_findings,
+            "summary": {
+                "total_vulnerabilities": len(self.vulnerabilities),
+                "chaos_vulnerabilities": len(chaos_findings),
+                "total_endpoints": total_endpoints,
+                "tested_endpoints": tested_endpoints,
+            }
         }
