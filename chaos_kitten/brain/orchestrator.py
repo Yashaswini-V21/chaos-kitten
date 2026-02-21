@@ -94,11 +94,23 @@ def natural_language_plan(state: AgentState, app_config: Dict[str, Any]) -> Dict
         nl_plan = planner.plan(goal)
         
         # Filter endpoints based on NL plan
-        relevant_paths = {ep.get("path") for ep in nl_plan.get("endpoints", [])}
-        filtered_endpoints = [
-            ep for ep in state["endpoints"]
-            if ep.get("path") in relevant_paths
-        ]
+        # Build (method, path) set for precise matching
+        relevant_pairs = {
+            (ep.get("method", "").upper(), ep.get("path"))
+            for ep in nl_plan.get("endpoints", [])
+        }
+        if relevant_pairs:
+            filtered_endpoints = [
+                ep for ep in state["endpoints"]
+                if (ep.get("method", "GET").upper(), ep.get("path")) in relevant_pairs
+            ]
+        else:
+            # Fallback: path-only
+            relevant_paths = {ep.get("path") for ep in nl_plan.get("endpoints", [])}
+            filtered_endpoints = [
+                ep for ep in state["endpoints"]
+                if ep.get("path") in relevant_paths
+            ]
         
         console.print(
             f"[green]✓ LLM selected {len(filtered_endpoints)}/{len(state['endpoints'])} "

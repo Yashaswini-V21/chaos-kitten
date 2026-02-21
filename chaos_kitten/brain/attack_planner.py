@@ -614,6 +614,18 @@ class AttackPlanner:
             )
 
 
+# Default profile list for fallback when toys directory is not accessible
+default_profiles = [
+    "sql_injection_basic",
+    "xss_reflected",
+    "idor_basic",
+    "bola",
+    "command_injection",
+    "path_traversal",
+    "xxe",
+    "ssrf"
+]
+
 # Natural Language Attack Targeting Prompt
 NATURAL_LANGUAGE_PLANNING_PROMPT = """You are a security expert tasked with identifying which API endpoints are most relevant to test for a specific security goal.
 
@@ -644,7 +656,7 @@ You must respond ONLY with valid JSON (no markdown, no explanations outside JSON
     "focus": "Test for price/quantity manipulation in cart and checkout flows. Pay special attention to total calculation bypass and discount abuse."
 }}
 
-Provide your analysis:
+Remember: respond only with valid JSON matching the schema above. Do not include any explanatory text.
 """
 
 
@@ -676,7 +688,7 @@ class NaturalLanguagePlanner:
         elif provider == "ollama":
             return ChatOllama(model=model, temperature=temperature)
         else:
-            logger.warning(f"Unknown provider {provider}, defaulting to Anthropic")
+            logger.warning("Unknown provider %s, defaulting to Anthropic", provider)
             return ChatAnthropic(model=model, temperature=temperature)
 
     def plan(self, goal: str) -> dict[str, Any]:
@@ -766,21 +778,18 @@ class NaturalLanguagePlanner:
         """Load list of available attack profile names."""
         try:
             import glob
-            profile_files = glob.glob("toys/*.yaml")
+            import os as _os
+            module_dir = _os.path.dirname(_os.path.abspath(__file__))
+            package_root = _os.path.dirname(_os.path.dirname(module_dir))
+            toys_dir = _os.path.join(package_root, "toys")
+            profile_files = glob.glob(_os.path.join(toys_dir, "*.yaml"))
+            if not profile_files:
+                return default_profiles
             return [
-                os.path.basename(f).replace(".yaml", "")
+                _os.path.basename(f).replace(".yaml", "")
                 for f in profile_files
             ]
         except Exception:
-            # Fallback to common profiles
-            return [
-                "sql_injection_basic",
-                "xss_reflected",
-                "idor_basic",
-                "bola",
-                "command_injection",
-                "path_traversal",
-                "xxe",
-                "ssrf"
-            ]
+            return default_profiles
+
 
