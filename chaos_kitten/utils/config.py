@@ -82,10 +82,11 @@ class Config:
             if "base_url" not in target:
                 raise ValueError("Missing required field: target.base_url")
 
-        # Validate adaptive.max_rounds
+        # Validate adaptive config
         adaptive = self._config.get("adaptive", {})
         if "max_rounds" in adaptive:
-            if not isinstance(adaptive["max_rounds"], int) or adaptive["max_rounds"] < 1:
+            max_rounds = adaptive["max_rounds"]
+            if not isinstance(max_rounds, int) or max_rounds < 1:
                 raise ValueError("adaptive.max_rounds must be a positive integer")
     
     @property
@@ -96,7 +97,10 @@ class Config:
     @property
     def agent(self) -> Dict[str, Any]:
         """Get agent configuration."""
-        return self._config.get("agent", {})
+        agent_config = dict(self._config.get("agent", {}))
+        if "max_concurrent_agents" not in agent_config:
+            agent_config["max_concurrent_agents"] = 3
+        return agent_config
     
     @property
     def executor(self) -> Dict[str, Any]:

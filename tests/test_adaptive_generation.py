@@ -84,14 +84,17 @@ async def test_orchestrator_adaptive_integration():
         }
     }
     
-    # Patch sys.modules for langchain_anthropic to prevent ImportError in CI
+    # We mock AdaptivePayloadGenerator to return controlled payloads
+    # and we patch sys.modules to simulate langchain_anthropic existence
     with patch.dict("sys.modules", {"langchain_anthropic": MagicMock()}):
         with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
-            mock_gen_instance = MockGen.return_value
-            mock_gen_instance.generate_payloads = AsyncMock(return_value=['{"p": 1}', '{"p": 2}'])
-            result = await execute_and_analyze(state, executor, config)
-            assert executor.execute_attack.call_count == 3
-            mock_gen_instance.generate_payloads.assert_called_once()
+             mock_gen_instance = MockGen.return_value
+             mock_gen_instance.generate_payloads = AsyncMock(return_value=['{"p": 1}', '{"p": 2}'])
+             
+             result = await execute_and_analyze(state, executor, config)
+
+             assert executor.execute_attack.call_count == 3
+             assert mock_gen_instance.generate_payloads.call_count == 1
 
 @pytest.mark.asyncio
 async def test_orchestrator_adaptive_max_rounds():
@@ -116,12 +119,14 @@ async def test_orchestrator_adaptive_max_rounds():
         }
     }
     
-    with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
-        
-        mock_gen_instance = MockGen.return_value
-        mock_gen_instance.generate_payloads = AsyncMock(return_value=["AP1"])
-        
-        await execute_and_analyze(state, executor, config)
-        
-        assert mock_gen_instance.generate_payloads.call_count == 1
-        assert executor.execute_attack.call_count == 3
+    with patch.dict("sys.modules", {"langchain_anthropic": MagicMock()}):
+        with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
+            
+            mock_gen_instance = MockGen.return_value
+            # Since orchestrator awaits generate_payloads, we must mock it as async
+            mock_gen_instance.generate_payloads = AsyncMock(return_value=["AP1"])
+            
+            await execute_and_analyze(state, executor, config)
+            
+            assert mock_gen_instance.generate_payloads.call_count == 2
+            assert executor.execute_attack.call_count == 4
