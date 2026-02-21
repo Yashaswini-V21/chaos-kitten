@@ -84,28 +84,8 @@ async def test_orchestrator_adaptive_integration():
         }
     }
     
-    with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
-        
-        mock_gen_instance = MockGen.return_value
-        # Since orchestrator awaits generate_payloads, we must mock it as async
-        mock_gen_instance.generate_payloads = AsyncMock(return_value=['{"p": 1}', '{"p": 2}'])
-        
-        # We need to make sure the LLM setup doesn't fail. 
-        # Since we mock AdaptivePayloadGenerator constructor, the arguments pass to it don't matter much 
-        # as long as the import succeeds or we bypass it.
-        # But wait, execute_and_analyze tries to instantiate ChatAnthropic BEFORE creating AdaptivePayloadGenerator.
-        # So we need to ensure that part works or use a different provider.
-        
-        # Easier path: mock the local import in orchestrator or just don't patch ChatAnthropic and assume it works 
-        # or use sys.modules patching. 
-        # Better: Configure it to use a provider that we can easily mock or just mock the sys.modules for langchain_anthropic
-
-    # Actually, simpler approach:
-    # 1. Mock 'chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator' (Done)
-    # 2. To avoid ChatAnthropic import issues or to satisfy the loop, send "llm_provider": "openai" and mock langchain_openai? 
-    # Or just mock the import using patch.dict(sys.modules, ...)
-    
-    # Let's try patching sys.modules to simulate langchain_anthropic existence
+    # We mock AdaptivePayloadGenerator to return controlled payloads
+    # and we patch sys.modules to simulate langchain_anthropic existence
     with patch.dict("sys.modules", {"langchain_anthropic": MagicMock()}):
         with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
              mock_gen_instance = MockGen.return_value
