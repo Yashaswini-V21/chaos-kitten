@@ -227,8 +227,7 @@ def scan(
             try:
                 threshold_index = severity_levels.index(fail_on.lower())
             except ValueError:
-                if not silent:
-                    console.print(f"[bold yellow]⚠️ Invalid fail-on level '{fail_on}', defaulting to critical[/bold yellow]")
+                console.print(f"[bold yellow]⚠️ Invalid fail-on level '{fail_on}', defaulting to critical[/bold yellow]")
                 threshold_index = 3  # Default to critical
             
             vulnerabilities = results.get("vulnerabilities", [])

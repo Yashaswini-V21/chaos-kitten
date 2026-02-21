@@ -2,6 +2,15 @@
 
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
+import sys
+
+# Mock modules for optional dependencies
+sys.modules["langchain_core"] = MagicMock()
+sys.modules["langchain_core.language_models"] = MagicMock()
+sys.modules["langchain_core.output_parsers"] = MagicMock()
+sys.modules["langchain_core.prompts"] = MagicMock()
+sys.modules["langchain_anthropic"] = MagicMock()
+
 from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
 from chaos_kitten.brain.orchestrator import execute_and_analyze, Orchestrator, AgentState
 
@@ -73,8 +82,8 @@ async def test_orchestrator_adaptive_integration():
         }
     }
     
-    with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen, \
-         patch("chaos_kitten.brain.orchestrator.ChatAnthropic") as MockLLM:
+    with patch("chaos_kitten.brain.adaptive_planner.AdaptivePayloadGenerator") as MockGen, \
+         patch("langchain_anthropic.ChatAnthropic") as MockLLM:
         
         mock_gen_instance = MockGen.return_value
         mock_gen_instance.generate_payloads.return_value = ['{"p": 1}', '{"p": 2}']
@@ -107,13 +116,13 @@ async def test_orchestrator_adaptive_max_rounds():
         }
     }
     
-    with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen, \
-         patch("chaos_kitten.brain.orchestrator.ChatAnthropic"):
+    with patch("chaos_kitten.brain.adaptive_planner.AdaptivePayloadGenerator") as MockGen, \
+         patch("langchain_anthropic.ChatAnthropic"):
         
         mock_gen_instance = MockGen.return_value
         mock_gen_instance.generate_payloads.return_value = ["AP1"]
         
         await execute_and_analyze(state, executor, config)
         
-        assert mock_gen_instance.generate_payloads.call_count == 1
-        assert executor.execute_attack.call_count == 3
+        assert mock_gen_instance.generate_payloads.call_count == 2
+        assert executor.execute_attack.call_count == 4

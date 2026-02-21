@@ -22,8 +22,6 @@ from rich.progress import (
 )
 
 from chaos_kitten.brain.attack_planner import AttackPlanner
-from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
-from langchain_anthropic import ChatAnthropic
 # Internal Chaos Kitten imports
 from chaos_kitten.brain.openapi_parser import OpenAPIParser
 # from chaos_kitten.brain.response_analyzer import ResponseAnalyzer # Deprecated/Replaced
@@ -86,6 +84,9 @@ async def execute_and_analyze(
     # Initialize Adaptive Generator if needed
     adaptive_gen = None
     if adaptive_mode:
+        from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
+        from langchain_anthropic import ChatAnthropic
+
         # Default to Claude for now, could get from config
         llm = ChatAnthropic(model="claude-3-5-sonnet-20241022", temperature=0.7)
         adaptive_gen = AdaptivePayloadGenerator(llm, max_rounds=max_rounds)
@@ -96,7 +97,7 @@ async def execute_and_analyze(
     async def run_single_payload(payload_val, attack_conf, is_adaptive=False):
         endpoint_path = endpoint.get("path")
         if not endpoint_path:
-            return None
+            return None, None
 
         try:
             result = await executor.execute_attack(
@@ -110,7 +111,7 @@ async def execute_and_analyze(
                 endpoint.get("method"),
                 endpoint.get("path"),
             )
-            return None
+            return None, None
 
         payload_used = ""
         if payload_val is None:
@@ -127,6 +128,7 @@ async def execute_and_analyze(
             payload_used = str(payload_val)
         
         response_data = {
+            "headers": result.get("headers", {}),
             "body": result.get("body", result.get("response_body", "")),
             "status_code": result.get("status_code", 0),
             "elapsed_ms": result.get("elapsed_ms", result.get("response_time", 0)),
@@ -256,13 +258,11 @@ class Orchestrator:
                 "Please upgrade Python or use a compatible langgraph version."
             )
         from langgraph.graph import END, START, StateGraph
-        workflow = StateGraph(AgentState)
 
-        workflow.add_node("parse", parse_openapi)
-        workflow.add_node("plan", plan_attacks)
-        workflow.add_node(
-            "execute_analyze", partial(execute_and_analyze, executor=executor, config=self.config)
-        )
+        async def execute_analyze_wrapper(state: AgentState):
+            return await execute_and_analyze(state, executor, self.config)
+
+        workflow.add_node("execute_analyze", execute_analyze_wrapper)
 
         workflow.add_edge(START, "parse")
         workflow.add_edge("parse", "plan")
