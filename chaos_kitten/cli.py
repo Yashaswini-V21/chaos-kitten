@@ -1,15 +1,32 @@
 """Chaos Kitten CLI - Command Line Interface."""
 
+from yaml import parser
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from chaos_kitten.brain.cors import analyze_cors
+
+parser.add_argument("--cors", action="store_true", help="Scan for CORS issues")
 
 app = typer.Typer(
     name="chaos-kitten",
     help="🐱 Chaos Kitten - The adorable AI agent that knocks things off your API tables",
     add_completion=False,
 )
+
+
 console = Console()
+
+def run_cors_scan(response):
+    headers = {k.lower(): v for k, v in response.headers.items()}
+    return analyze_cors(headers)
+
+if args.cors:
+    cors_findings = run_cors_scan(resp)
+    for f in cors_findings:
+        print(f"[CORS] {f['severity'].upper()} - {f['issue']}")
+
 
 ASCII_CAT = r"""
            /\___/\  
