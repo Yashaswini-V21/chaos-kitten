@@ -52,7 +52,7 @@ class Executor:
         self.rate_limit = rate_limit
         self.timeout = timeout
         self._client: Optional[httpx.AsyncClient] = None
-        self._rate_limiter: Optional[asyncio.Semaphore] = None
+        self._rate_limiter = asyncio.Semaphore(self.rate_limit)
         self._last_request_time: float = 0.0
     
     async def __aenter__(self) -> "Executor":
@@ -62,8 +62,6 @@ class Executor:
             timeout=self.timeout,
             headers=self._build_headers(),
         )
-        # Initialize rate limiter semaphore
-        self._rate_limiter = asyncio.Semaphore(self.rate_limit)
         return self
     
     async def __aexit__(self, *args: Any) -> None:
