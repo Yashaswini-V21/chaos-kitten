@@ -177,7 +177,10 @@ def scan(
             config_obj = Config(config)
             cfg = config_obj.load()
         except FileNotFoundError as e:
-            console.print(f"[yellow]⚠️  {e}[/yellow]")
+            if not target and not spec:
+                console.print(f"[bold red]❌ Config file not found: {config}[/bold red]")
+                console.print("Run 'chaos-kitten init' or provide --target and --spec args.")
+                raise typer.Exit(code=1)
             cfg = {"target": {}, "reporting": {}}
         
         # Override with CLI args
@@ -187,6 +190,8 @@ def scan(
             cfg.setdefault("target", {})["openapi_spec"] = spec
         if output:
             cfg.setdefault("reporting", {})["output_path"] = output
+        if format:
+            cfg.setdefault("reporting", {})["format"] = format
         if provider:
             cfg.setdefault("agent", {})["llm_provider"] = provider
             
