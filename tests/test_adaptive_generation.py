@@ -84,15 +84,14 @@ async def test_orchestrator_adaptive_integration():
         }
     }
     
-    with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
-        
-        mock_gen_instance = MockGen.return_value
-        mock_gen_instance.generate_payloads = AsyncMock(return_value=['{"p": 1}', '{"p": 2}'])
-        
-        result = await execute_and_analyze(state, executor, config)
-        
-        assert executor.execute_attack.call_count == 3
-        mock_gen_instance.generate_payloads.assert_called_once()
+    # Patch sys.modules for langchain_anthropic to prevent ImportError in CI
+    with patch.dict("sys.modules", {"langchain_anthropic": MagicMock()}):
+        with patch("chaos_kitten.brain.orchestrator.AdaptivePayloadGenerator") as MockGen:
+            mock_gen_instance = MockGen.return_value
+            mock_gen_instance.generate_payloads = AsyncMock(return_value=['{"p": 1}', '{"p": 2}'])
+            result = await execute_and_analyze(state, executor, config)
+            assert executor.execute_attack.call_count == 3
+            mock_gen_instance.generate_payloads.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_orchestrator_adaptive_max_rounds():

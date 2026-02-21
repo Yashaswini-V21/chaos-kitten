@@ -81,6 +81,12 @@ class Config:
             # Default to REST behavior
             if "base_url" not in target:
                 raise ValueError("Missing required field: target.base_url")
+
+        # Validate adaptive.max_rounds
+        adaptive = self._config.get("adaptive", {})
+        if "max_rounds" in adaptive:
+            if not isinstance(adaptive["max_rounds"], int) or adaptive["max_rounds"] < 1:
+                raise ValueError("adaptive.max_rounds must be a positive integer")
     
     @property
     def target(self) -> Dict[str, Any]:

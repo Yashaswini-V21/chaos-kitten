@@ -20,7 +20,12 @@ from rich.progress import (
 )
 
 from chaos_kitten.brain.attack_planner import AttackPlanner
-from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
+try:
+    from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
+    HAS_ADAPTIVE = True
+except ImportError:
+    HAS_ADAPTIVE = False
+    AdaptivePayloadGenerator = None
 # Internal Chaos Kitten imports
 from chaos_kitten.brain.openapi_parser import OpenAPIParser
 # from chaos_kitten.brain.response_analyzer import ResponseAnalyzer # Deprecated/Replaced
@@ -94,11 +99,10 @@ async def execute_and_analyze(
                 llm = ChatAnthropic(model=model, temperature=temperature)
             else:
                 raise ValueError(f"Unsupported LLM provider for adaptive mode: {provider}")
-                
             adaptive_gen = AdaptivePayloadGenerator(llm, max_rounds=max_rounds)
-        except ImportError as e:
-            logger.error(f"Failed to import LLM provider dependencies: {e}")
-            logger.warning("Adaptive mode disabled due to missing dependencies.")
+        except (ImportError, ValueError) as e:
+            logger.exception("Failed to set up adaptive LLM: %s", e)
+            logger.warning("Adaptive mode disabled due to missing dependencies or invalid provider.")
             adaptive_mode = False
 
     new_findings = []
