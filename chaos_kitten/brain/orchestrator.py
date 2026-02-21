@@ -118,25 +118,29 @@ async def execute_and_analyze(
     # Initialize Adaptive Generator if needed
     adaptive_gen = None
     if adaptive_mode:
-        provider = agent_config.get("llm_provider", "anthropic").lower()
-        model = agent_config.get("model", "claude-3-5-sonnet-20241022")
-        temperature = agent_config.get("temperature", 0.7)
-
-        try:
-            if provider == "openai":
-                from langchain_openai import ChatOpenAI
-                llm = ChatOpenAI(model=model, temperature=temperature)
-            elif provider == "anthropic":
-                from langchain_anthropic import ChatAnthropic
-                llm = ChatAnthropic(model=model, temperature=temperature)
-            else:
-                raise ValueError(f"Unsupported LLM provider for adaptive mode: {provider}")
-                
-            adaptive_gen = AdaptivePayloadGenerator(llm, max_rounds=max_rounds)
-        except (ImportError, ValueError) as e:
-            logger.exception("Failed to set up adaptive LLM: %s", e)
-            logger.warning("Adaptive mode disabled due to missing dependencies or invalid provider.")
+        if not HAS_ADAPTIVE:
+            logger.warning("AdaptivePayloadGenerator unavailable (missing dependencies). Adaptive mode disabled.")
             adaptive_mode = False
+        else:
+            provider = agent_config.get("llm_provider", "anthropic").lower()
+            model = agent_config.get("model", "claude-3-5-sonnet-20241022")
+            temperature = agent_config.get("temperature", 0.7)
+
+            try:
+                if provider == "openai":
+                    from langchain_openai import ChatOpenAI
+                    llm = ChatOpenAI(model=model, temperature=temperature)
+                elif provider == "anthropic":
+                    from langchain_anthropic import ChatAnthropic
+                    llm = ChatAnthropic(model=model, temperature=temperature)
+                else:
+                    raise ValueError(f"Unsupported LLM provider for adaptive mode: {provider}")
+                    
+                adaptive_gen = AdaptivePayloadGenerator(llm, max_rounds=max_rounds)
+            except (ImportError, ValueError) as e:
+                logger.exception("Failed to set up adaptive LLM: %s", e)
+                logger.warning("Adaptive mode disabled due to missing dependencies or invalid provider.")
+                adaptive_mode = False
 
     new_findings = []
     
