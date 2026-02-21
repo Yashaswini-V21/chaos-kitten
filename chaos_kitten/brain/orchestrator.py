@@ -228,53 +228,55 @@ class Orchestrator:
             
         print(f"🚀 Starting scan against {target_url}")
         
-        if not HAS_LANGGRAPH:
-            print("⚠️  LangGraph not installed. Please install it to use the agentic brain.")
-            return {"vulnerabilities": [], "chaos_findings": []}
+        findings = []
+        if HAS_LANGGRAPH:
+            # Build the graph
+            workflow = StateGraph(AgentState)
 
-        # Build the graph
-        workflow = StateGraph(AgentState)
+            # Nodes
+            workflow.add_node("recon", partial(run_recon, app_config=self.config))
+            workflow.add_node("parse", parse_openapi)
+            workflow.add_node("plan", plan_attacks)
+            
+            # Edges
+            workflow.add_edge(START, "recon")
+            workflow.add_edge("recon", "parse")
+            workflow.add_edge("parse", "plan")
 
-        # Nodes
-        workflow.add_node("recon", partial(run_recon, app_config=self.config))
-        workflow.add_node("parse", parse_openapi)
-        workflow.add_node("plan", plan_attacks)
-        
-        executor = Executor(self.config)
-        workflow.add_node("execute", partial(execute_and_analyze, executor=executor))
+            async with Executor(self.config) as executor:
+                workflow.add_node("execute", partial(execute_and_analyze, executor=executor))
+                workflow.add_edge("plan", "execute")
 
-        # Edges
-        workflow.add_edge(START, "recon")
-        workflow.add_edge("recon", "parse")
-        workflow.add_edge("parse", "plan")
-        workflow.add_edge("plan", "execute")
+                workflow.add_conditional_edges(
+                    "execute",
+                    should_continue,
+                    {
+                        "plan": "plan",
+                        "end": END
+                    }
+                )
 
-        workflow.add_conditional_edges(
-            "execute",
-            should_continue,
-            {
-                "plan": "plan",
-                "end": END
-            }
-        )
+                app = workflow.compile()
+                
+                # Initial state
+                initial_state = {
+                    "spec_path": self.config.get("target", {}).get("openapi_spec", ""),
+                    "base_url": target_url,
+                    "endpoints": [],
+                    "current_endpoint": 0,
+                    "planned_attacks": [],
+                    "results": [],
+                    "findings": [],
+                    "recon_results": {}
+                }
 
-        app = workflow.compile()
-        
-        # Initial state
-        initial_state = {
-            "spec_path": self.config.get("target", {}).get("openapi_spec", ""),
-            "base_url": target_url,
-            "endpoints": [],
-            "current_endpoint": 0,
-            "planned_attacks": [],
-            "results": [],
-            "findings": [],
-            "recon_results": {}
-        }
+                # Run the agent
+                final_state = await app.ainvoke(initial_state)
+                findings = final_state.get("findings", [])
+        else:
+            print("⚠️  LangGraph not installed. Skipping standard agentic scan.")
 
-        # Run the agent
-        final_state = await app.ainvoke(initial_state)
-        self.vulnerabilities = final_state.get("findings", [])
+        self.vulnerabilities = findings
 
         # Run chaos mode if enabled
         chaos_findings = []
