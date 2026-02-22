@@ -134,6 +134,12 @@ def scan(
     "--cors",
     help="Run CORS misconfiguration scan",
     ),
+    goal: str = typer.Option(
+    None,
+    "--goal",
+    "-g",
+    help="Natural language goal to target specific endpoints (e.g., 'test payment price manipulation')",
+    ),
 ):
     """Scan an API for security vulnerabilities."""
     console.print(Panel(ASCII_CAT, title="🐱 Chaos Kitten", border_style="magenta"))
