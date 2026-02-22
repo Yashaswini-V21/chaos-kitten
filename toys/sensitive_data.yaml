@@ -1,0 +1,381 @@
+# Information Disclosure / Sensitive Data Exposure Attack Profile
+# Tests for unintended information leakage in API responses, headers, errors, and endpoints
+
+name: "Information Disclosure - Sensitive Data"
+category: "information_disclosure"
+severity: "medium"
+description: >
+  Tests for sensitive information exposure through error messages, response headers,
+  debug endpoints, metadata leakage, source code comments, and excessive user data.
+  Covers CWE-200 (Information Exposure) and OWASP A01 (Broken Access Control).
+
+# Attack payloads categorized by disclosure type
+payloads:
+  # --- Category 1: Error Message Leakage (stack traces, database errors, version info) ---
+  
+  # Trigger application errors to provoke verbose error messages
+  - type: "error_message_leakage"
+    path: "/api/users/{invalid_id}"
+    description: "Invalid ID to trigger stack trace"
+    payload: "invalid_id"
+    
+  - type: "error_message_leakage"
+    path: "/api/users"
+    description: "Malformed JSON to trigger parser error"
+    payload: "{invalid_json"
+    
+  - type: "error_message_leakage"
+    path: "/api/search"
+    description: "SQL syntax error trigger"
+    payload: "query=test'"
+    
+  - type: "error_message_leakage"
+    path: "/api/process"
+    description: "Type error trigger"
+    payload: '{"number": "not_a_number"}'
+    
+  - type: "error_message_leakage"
+    path: "/api/calculate"
+    description: "Division by zero"
+    payload: "divisor=0"
+  
+  
+  # --- Category 2: Response Header Exposure (X-Powered-By, Server, technical details) ---
+  
+  - type: "header_exposure"
+    path: "/"
+    description: "Check for X-Powered-By header"
+    check_headers:
+      - "X-Powered-By"
+      - "Server"
+      - "X-AspNet-Version"
+      - "X-AspNetMvc-Version"
+      - "X-Runtime"
+      - "X-Version"
+  
+  
+  # --- Category 3: Metadata Exposure (API docs, admin panels, version endpoints) ---
+  
+  - type: "metadata_exposure"
+    path: "/api/swagger"
+    description: "Swagger/OpenAPI documentation accessible"
+    
+  - type: "metadata_exposure"
+    path: "/api/docs"
+    description: "API documentation endpoint"
+    
+  - type: "metadata_exposure"
+    path: "/api/v1/swagger.json"
+    description: "OpenAPI spec file"
+    
+  - type: "metadata_exposure"
+    path: "/api/openapi.json"
+    description: "OpenAPI spec alternate path"
+    
+  - type: "metadata_exposure"
+    path: "/graphql"
+    description: "GraphQL introspection enabled"
+    payload: '{"query": "{ __schema { types { name } } }"}'
+    
+  - type: "metadata_exposure"
+    path: "/admin"
+    description: "Admin panel accessible"
+    
+  - type: "metadata_exposure"
+    path: "/api/admin"
+    description: "Admin API endpoint"
+    
+  - type: "metadata_exposure"
+    path: "/.well-known/security.txt"
+    description: "Security policy disclosure"
+  
+  
+  # --- Category 4: Debug Endpoints (debug flags, metrics, health checks with details) ---
+  
+  - type: "debug_endpoints"
+    path: "/debug"
+    description: "Debug mode endpoint"
+    
+  - type: "debug_endpoints"
+    path: "/api/debug"
+    description: "API debug endpoint"
+    
+  - type: "debug_endpoints"
+    path: "/metrics"
+    description: "Prometheus/metrics endpoint with system info"
+    
+  - type: "debug_endpoints"
+    path: "/api/health"
+    description: "Health check with verbose system details"
+    
+  - type: "debug_endpoints"
+    path: "/api/status"
+    description: "Status endpoint with version info"
+    
+  - type: "debug_endpoints"
+    path: "/api/version"
+    description: "Version information endpoint"
+    
+  - type: "debug_endpoints"
+    path: "/api/info"
+    description: "Application info endpoint"
+    
+  - type: "debug_endpoints"
+    path: "/?debug=true"
+    description: "Debug flag in query params"
+    
+  - type: "debug_endpoints"
+    path: "/api/users?verbose=1"
+    description: "Verbose mode flag"
+  
+  
+  # --- Category 5: Comments/Source Code (API keys in comments, source disclosure) ---
+  
+  - type: "source_disclosure"
+    path: "/api.js"
+    description: "JavaScript source files with API keys"
+    
+  - type: "source_disclosure"
+    path: "/main.js"
+    description: "Main JavaScript bundle"
+    
+  - type: "source_disclosure"
+    path: "/config.js"
+    description: "Configuration JavaScript"
+    
+  - type: "source_disclosure"
+    path: "/.git/config"
+    description: "Git configuration with repository URLs"
+    
+  - type: "source_disclosure"
+    path: "/package.json"
+    description: "NPM package file with dependencies"
+    
+  - type: "source_disclosure"
+    path: "/composer.json"
+    description: "Composer package file"
+  
+  
+  # --- Category 6: User Data Exposure (PII, excessive data, directory listings) ---
+  
+  - type: "user_data_exposure"
+    path: "/api/users"
+    description: "User list with excessive fields (PII)"
+    check_fields:
+      - "email"
+      - "phone"
+      - "ssn"
+      - "address"
+      - "password"
+      - "password_hash"
+      - "credit_card"
+      
+  - type: "user_data_exposure"
+    path: "/api/users/{user_id}"
+    description: "User profile with sensitive fields"
+    check_fields:
+      - "salary"
+      - "date_of_birth"
+      - "social_security_number"
+      
+  - type: "user_data_exposure"
+    path: "/api/profile"
+    description: "Profile endpoint with excessive data"
+    
+  - type: "user_data_exposure"
+    path: "/uploads/"
+    description: "File upload directory listing"
+    
+  - type: "user_data_exposure"
+    path: "/files/"
+    description: "Files directory listing"
+    
+  - type: "user_data_exposure"
+    path: "/api/logs"
+    description: "Application logs accessible"
+
+
+# Success indicators for information disclosure
+success_indicators:
+  response_contains:
+    # Stack traces and error details
+    - "Traceback"
+    - "Stack Trace"
+    - "at line"
+    - "in file"
+    - "/var/www/"
+    - "/home/"
+    - "Exception"
+    - "ValueError"
+    - "TypeError"
+    - "SyntaxError"
+    - "RuntimeError"
+    - "NullPointerException"
+    - "StackOverflowError"
+    
+    # Database errors
+    - "SQL syntax error"
+    - "mysql_fetch"
+    - "PostgreSQL query failed"
+    - "ORA-"
+    - "SQLite3::"
+    
+    # Version information
+    - "PHP/"
+    - "Python/"
+    - "Django/"
+    - "Express/"
+    - "Apache/"
+    - "nginx/"
+    - "IIS/"
+    
+    # Framework/library leakage
+    - "Laravel"
+    - "Symfony"
+    - "Spring"
+    - "Hibernate"
+    - "ASP.NET"
+    
+    # Sensitive data patterns
+    - "password"
+    - "api_key"
+    - "secret"
+    - "token"
+    - "AWS_ACCESS_KEY"
+    - "DB_PASSWORD"
+    - "-----BEGIN PRIVATE KEY-----"
+    - "authorization"
+    
+    # Debug/verbose mode
+    - "DEBUG = True"
+    - "debug mode"
+    - "development mode"
+    - "Environment: development"
+    
+    # PII patterns
+    - "ssn"
+    - "social_security"
+    - "credit_card"
+    - "card_number"
+    - "cvv"
+    
+    # Directory listings
+    - "Index of /"
+    - "Parent Directory"
+    - "[DIR]"
+    
+    # Documentation/metadata
+    - "swagger"
+    - "openapi"
+    - "api-docs"
+    - "__schema"
+    
+  response_headers:
+    - "X-Powered-By"
+    - "Server"
+    - "X-AspNet-Version"
+    - "X-AspNetMvc-Version"
+    - "X-Runtime"
+    - "X-Debug-Token"
+    - "X-Version"
+    
+  status_codes:
+    - 200  # Successful access to debug/info endpoints
+    - 403  # Forbidden but reveals existence
+    - 500  # Internal errors with stack traces
+
+
+# How to prevent information disclosure
+remediation: |
+  **1. Error Handling:**
+  - Implement custom error pages without technical details
+  - Log detailed errors server-side, show generic messages to users
+  - Disable debug mode in production (DEBUG=False, NODE_ENV=production)
+  
+  Example (Python/Django):
+  ```python
+  # settings.py
+  DEBUG = False
+  ALLOWED_HOSTS = ['yourdomain.com']
+  
+  # Custom error handler
+  def custom_500(request):
+      return JsonResponse({
+          "error": "Internal server error",
+          "message": "Please contact support"
+      }, status=500)
+  ```
+  
+  **2. Response Headers:**
+  - Remove or obfuscate server version headers
+  - Configure web server to suppress technical headers
+  
+  Example (Nginx):
+  ```nginx
+  # nginx.conf
+  server_tokens off;
+  more_clear_headers 'Server';
+  more_clear_headers 'X-Powered-By';
+  ```
+  
+  **3. Secure Endpoints:**
+  - Disable or protect debug/admin endpoints in production
+  - Implement authentication for /metrics, /health, /debug routes
+  - Remove or restrict access to API documentation endpoints
+  
+  **4. Minimize Data Exposure:**
+  - Return only necessary fields in API responses
+  - Implement field-level access control
+  - Avoid exposing PII (email, phone, addresses) unnecessarily
+  
+  Example (Python):
+  ```python
+  # ❌ BAD - Exposes all user data
+  def get_user(user_id):
+      user = User.query.get(user_id)
+      return jsonify(user.__dict__)
+  
+  # ✅ GOOD - Returns only safe fields
+  def get_user(user_id):
+      user = User.query.get(user_id)
+      return jsonify({
+          "id": user.id,
+          "username": user.username,
+          "avatar": user.avatar_url
+      })
+  ```
+  
+  **5. Source Code Protection:**
+  - Remove comments containing sensitive information
+  - Don't expose source maps in production
+  - Block access to .git/, .env, package.json, etc.
+  
+  **6. Directory Listing:**
+  - Disable directory browsing on web servers
+  - Use proper access controls for file uploads
+  
+  Example (Apache):
+  ```apache
+  <Directory "/var/www/html">
+      Options -Indexes
+  </Directory>
+  ```
+  
+  **7. Security Best Practices:**
+  - Implement security.txt for responsible disclosure
+  - Use Content-Security-Policy headers
+  - Regularly audit API responses for data leakage
+  - Apply principle of least privilege
+
+
+# Standards and references
+references:
+  - "https://cwe.mitre.org/data/definitions/200.html"
+  - "https://owasp.org/www-project-top-ten/"
+  - "https://owasp.org/www-community/vulnerabilities/Information_exposure_through_query_strings_in_url"
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+  - "https://portswigger.net/web-security/information-disclosure"
+  - "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/01-Testing_For_Improper_Error_Handling"
+
+cwe: "CWE-200"
+owasp: "A01:2021"
