@@ -209,8 +209,16 @@ def scan(
         import asyncio
         results = asyncio.run(orchestrator.run())
         
-        if cors:
-            headers = results.get("headers") if isinstance(results, dict) else None
+        if cors and target_url:
+            import httpx, asyncio
+            async def _cors_probe():
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(target_url, headers={"Origin": "https://evil.example"})
+                    return dict(resp.headers)
+            probe_headers = asyncio.run(_cors_probe())
+            cors_findings = analyze_cors({k.lower(): v for k, v in probe_headers.items()})
+            for f in cors_findings:
+                console.print(f"[bold yellow][CORS][/bold yellow] {f['severity'].upper()} - {f['issue']}")
             
             if headers:
                 cors_findings = analyze_cors(
