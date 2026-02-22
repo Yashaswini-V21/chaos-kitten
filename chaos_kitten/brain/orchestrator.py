@@ -182,7 +182,7 @@ async def execute_and_analyze(
                     only_value if isinstance(only_value, str) else str(only_value)
                 )
             else:
-                payload_used = json.dumps(payload_obj, sort_keys=True, default=str, ensure_ascii=True)
+                payload_used = json.dumps(payload_val, sort_keys=True, default=str, ensure_ascii=True)
         else:
             payload_used = str(payload_val)
         
@@ -350,7 +350,7 @@ class Orchestrator:
         workflow.add_node("recon", partial(run_recon, app_config=self.config))
         workflow.add_node("parse", parse_openapi)
         workflow.add_node("plan", plan_attacks)
-        workflow.add_node("execute", partial(execute_and_analyze, executor=executor))
+        workflow.add_node("execute", partial(execute_and_analyze, executor=executor, app_config=self.config))
         
         # Edges
         workflow.add_edge(START, "recon")
