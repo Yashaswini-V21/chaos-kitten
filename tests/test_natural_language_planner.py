@@ -12,26 +12,69 @@ def sample_endpoints():
         {
             "method": "POST",
             "path": "/api/checkout",
-            "parameters": {"user_id": "integer", "cart_id": "integer"},
-            "body": {"total": "number", "items": "array"}
+            "parameters": [
+                {"name": "user_id", "in": "query", "required": True, "schema": {"type": "integer"}},
+                {"name": "cart_id", "in": "query", "required": True, "schema": {"type": "integer"}}
+            ],
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "total": {"type": "number"},
+                                "items": {"type": "array"}
+                            }
+                        }
+                    }
+                }
+            }
         },
         {
             "method": "GET",
             "path": "/api/users/{id}",
-            "parameters": {"id": "integer"},
-            "body": None
+            "parameters": [
+                {"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}}
+            ],
+            "requestBody": None
         },
         {
             "method": "POST",
             "path": "/api/login",
-            "parameters": {},
-            "body": {"username": "string", "password": "string"}
+            "parameters": [],
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "username": {"type": "string"},
+                                "password": {"type": "string"}
+                            }
+                        }
+                    }
+                }
+            }
         },
         {
             "method": "PUT",
             "path": "/api/cart/update",
-            "parameters": {"cart_id": "integer"},
-            "body": {"quantity": "integer", "price": "number"}
+            "parameters": [
+                {"name": "cart_id", "in": "query", "required": True, "schema": {"type": "integer"}}
+            ],
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "quantity": {"type": "integer"},
+                                "price": {"type": "number"}
+                            }
+                        }
+                    }
+                }
+            }
         }
     ]
 

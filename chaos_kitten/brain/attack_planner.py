@@ -694,8 +694,15 @@ class NaturalLanguagePlanner:
         """Initialize the LLM based on config."""
         agent_config = self.config.get("agent", {})
         provider = agent_config.get("llm_provider", "anthropic").lower()
-        model = agent_config.get("model", "claude-3-5-sonnet-20241022")
         temperature = agent_config.get("temperature", 0.7)
+        
+        # Provider-specific default models
+        default_models = {
+            "openai": "gpt-4o",
+            "anthropic": "claude-3-5-sonnet-20241022",
+            "ollama": "llama3",
+        }
+        model = agent_config.get("model", default_models.get(provider, "claude-3-5-sonnet-20241022"))
 
         if provider == "anthropic":
             return ChatAnthropic(model=model, temperature=temperature)
