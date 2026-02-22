@@ -15,12 +15,12 @@ payloads:
   
   # Trigger application errors to provoke verbose error messages
   - type: "error_message_leakage"
-    path: "/api/users/{invalid_id}"
+    path: "/api/users/invalid_id"
     description: "Invalid ID to trigger stack trace"
-    payload: "invalid_id"
     
   - type: "error_message_leakage"
     path: "/api/users"
+    method: "POST"
     description: "Malformed JSON to trigger parser error"
     payload: "{invalid_json"
     
@@ -31,11 +31,13 @@ payloads:
     
   - type: "error_message_leakage"
     path: "/api/process"
+    method: "POST"
     description: "Type error trigger"
     payload: '{"number": "not_a_number"}'
     
   - type: "error_message_leakage"
     path: "/api/calculate"
+    method: "POST"
     description: "Division by zero"
     payload: "divisor=0"
   
@@ -74,6 +76,7 @@ payloads:
     
   - type: "metadata_exposure"
     path: "/graphql"
+    method: "POST"
     description: "GraphQL introspection enabled"
     payload: '{"query": "{ __schema { types { name } } }"}'
     
@@ -84,10 +87,6 @@ payloads:
   - type: "metadata_exposure"
     path: "/api/admin"
     description: "Admin API endpoint"
-    
-  - type: "metadata_exposure"
-    path: "/.well-known/security.txt"
-    description: "Security policy disclosure"
   
   
   # --- Category 4: Debug Endpoints (debug flags, metrics, health checks with details) ---
@@ -236,15 +235,11 @@ success_indicators:
     - "Hibernate"
     - "ASP.NET"
     
-    # Sensitive data patterns
-    - "password"
+    # Sensitive data patterns (specific keys/values only)
     - "api_key"
-    - "secret"
-    - "token"
     - "AWS_ACCESS_KEY"
     - "DB_PASSWORD"
     - "-----BEGIN PRIVATE KEY-----"
-    - "authorization"
     
     # Debug/verbose mode
     - "DEBUG = True"
@@ -280,7 +275,6 @@ success_indicators:
     - "X-Version"
     
   status_codes:
-    - 200  # Successful access to debug/info endpoints
     - 403  # Forbidden but reveals existence
     - 500  # Internal errors with stack traces
 
@@ -313,9 +307,14 @@ remediation: |
   Example (Nginx):
   ```nginx
   # nginx.conf
-  server_tokens off;
-  more_clear_headers 'Server';
-  more_clear_headers 'X-Powered-By';
+  server_tokens off;  # Suppresses version from Server header
+  
+  # To remove headers entirely, install nginx-plus-module-headers-more:
+  # more_clear_headers 'Server';
+  # more_clear_headers 'X-Powered-By';
+  
+  # Or use proxy_hide_header for proxied responses:
+  # proxy_hide_header X-Powered-By;
   ```
   
   **3. Secure Endpoints:**
