@@ -17,6 +17,7 @@ class Config:
         """
         self._config_path = Path(config_path)
         self._config: Dict[str, Any] = {}
+
     @property
     def config_path(self) -> Path:
         """Get path to configuration file."""

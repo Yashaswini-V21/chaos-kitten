@@ -2,7 +2,6 @@
 
 import json
 import hashlib
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
@@ -20,7 +19,7 @@ class CheckpointData:
 def calculate_config_hash(config: Dict[str, Any]) -> str:
     """Calculate a hash of the configuration to ensure consistency."""
     # Convert config to a consistent JSON string for hashing
-    config_str = json.dumps(config, sort_keys=True)
+    config_str = json.dumps(config, sort_keys=True, default=str)
     return hashlib.sha256(config_str.encode()).hexdigest()
 
 def save_checkpoint(data: CheckpointData, path: Union[str, Path]) -> None:
