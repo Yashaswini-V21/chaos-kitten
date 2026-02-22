@@ -1,4 +1,4 @@
-from scanner.modules.cors import analyze_cors
+from chaos_kitten.brain.cors import analyze_cors
 
 def test_cors_wildcard_origin():
     headers = {

@@ -14,16 +14,17 @@ def analyze_cors(headers: Dict[str, str]) -> List[dict]:
             "severity": "high"
         })
 
-    # Credential exposure
-    if acc.lower() == "true" and aco:
+    # Credential exposure (avoid duplicate when wildcard origin already present)
+    if acc.lower() == "true" and aco and aco.strip() != "*":
         findings.append({
             "issue": "Credentialed CORS allowed",
             "severity": "critical"
-        })
+    })
 
     # Methods exposed
     dangerous = ["PUT", "DELETE", "PATCH"]
-    if any(m in acm.upper() for m in dangerous):
+    allowed_methods = [m.strip().upper() for m in acm.split(",")]
+    if any(m in allowed_methods for m in dangerous):
         findings.append({
             "issue": "Dangerous methods exposed via CORS",
             "severity": "medium"

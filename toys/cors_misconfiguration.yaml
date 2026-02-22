@@ -1,6 +1,9 @@
 name: cors_misconfiguration
 description: Detect overly permissive CORS policies
 severity: medium
+category: misconfiguration
+payloads: []
+target_fields: []
 
 requests:
   - method: GET

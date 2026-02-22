@@ -1,13 +1,8 @@
 """Chaos Kitten CLI - Command Line Interface."""
-
-from yaml import parser
-
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from chaos_kitten.brain.cors import analyze_cors
-
-parser.add_argument("--cors", action="store_true", help="Scan for CORS issues")
 
 app = typer.Typer(
     name="chaos-kitten",
@@ -17,16 +12,6 @@ app = typer.Typer(
 
 
 console = Console()
-
-def run_cors_scan(response):
-    headers = {k.lower(): v for k, v in response.headers.items()}
-    return analyze_cors(headers)
-
-if args.cors:
-    cors_findings = run_cors_scan(resp)
-    for f in cors_findings:
-        print(f"[CORS] {f['severity'].upper()} - {f['issue']}")
-
 
 ASCII_CAT = r"""
            /\___/\  
@@ -144,6 +129,11 @@ def scan(
         "--demo",
         help="Run scan against the demo vulnerable API",
     ),
+    cors: bool = typer.Option(
+    False,
+    "--cors",
+    help="Run CORS misconfiguration scan",
+    ),
 ):
     """Scan an API for security vulnerabilities."""
     console.print(Panel(ASCII_CAT, title="🐱 Chaos Kitten", border_style="magenta"))
@@ -218,6 +208,22 @@ def scan(
     try:
         import asyncio
         results = asyncio.run(orchestrator.run())
+        
+        if cors:
+            headers = results.get("headers") if isinstance(results, dict) else None
+            
+            if headers:
+                cors_findings = analyze_cors(
+                    {k.lower(): v for k, v in headers.items()}
+                    )
+                
+                for f in cors_findings:
+                    console.print(
+                        f"[bold yellow][CORS][/bold yellow] "
+                        f"{f['severity'].upper()} - {f['issue']}"
+                        )
+            else:
+                console.print("[dim]No response headers available for CORS scan.[/dim]")
 
         # Check for orchestrator runtime errors
         if isinstance(results, dict) and results.get("status") == "failed":
