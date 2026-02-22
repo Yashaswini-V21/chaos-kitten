@@ -1,11 +1,11 @@
-# Mass Assignment / Parameter Pollution - Attack Profile
-# This file defines payloads for testing Mass Assignment and HTTP Parameter Pollution vulnerabilities
-# References: OWASP A08 (Software and Data Integrity Failures), CWE-915
+# Mass Assignment - Attack Profile
+# This file defines payloads for testing Mass Assignment vulnerabilities
+# References: OWASP API3:2023, CWE-915
 
 name: "Mass Assignment / Parameter Pollution"
 category: "integrity_failures"
 severity: "high"
-description: "Tests for mass assignment vulnerabilities in JSON body, form data, and XML body submissions, where internal fields are exposed and can be overwritten."
+description: "Tests for mass assignment vulnerabilities in JSON body and form data submissions, where internal fields are exposed and can be overwritten."
 
 # target_fields: Holds model field names only
 target_fields:
@@ -93,12 +93,8 @@ payloads:
   - '{"accountBalance": 1000000}'
   - '{"isVerified": true}'
 
-  # --- HTTP Parameter Pollution (Query/Form) ---
-  - "id=1&id=2"
-  - "user=me&user=admin"
-  - "role=user&role=admin"
-  - "email=user@example.com&email=admin@example.com"
-  - "fields=id,name&fields=password"
+# NOTE: HTTP Parameter Pollution (HPP) payloads via URL-encoded strings 
+# were removed to prevent JSON schema mismatches per maintainer review.
 
 success_indicators:
   response_contains:
