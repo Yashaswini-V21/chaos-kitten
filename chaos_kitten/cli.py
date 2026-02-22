@@ -1,9 +1,9 @@
 """Chaos Kitten CLI - Command Line Interface."""
-
 import typer
 import logging
 from rich.console import Console
 from rich.panel import Panel
+from chaos_kitten.brain.cors import analyze_cors
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +12,8 @@ app = typer.Typer(
     help="🐱 Chaos Kitten - The adorable AI agent that knocks things off your API tables",
     add_completion=False,
 )
+
+
 console = Console()
 
 ASCII_CAT = r"""
@@ -112,12 +114,17 @@ def scan(
         "html",
         "--format",
         "-f",
-        help="Format of the report (html, markdown, json, sarif)",
+        help="Format of the report (html, markdown, json, sarif, junit)",
     ),
-    fail_on_critical: bool = typer.Option(
+    fail_on: str = typer.Option(
+        "none",
+        "--fail-on",
+        help="Exit with code 1 if severity >= level (none, low, medium, high, critical)",
+    ),
+    silent: bool = typer.Option(
         False,
-        "--fail-on-critical",
-        help="Exit with code 1 if critical vulnerabilities found",
+        "--silent",
+        help="Suppress console output except errors (useful for CI)",
     ),
     provider: str = typer.Option(
         None,
@@ -144,23 +151,28 @@ def scan(
     ),
 ):
     """Scan an API for security vulnerabilities."""
-    console.print(Panel(ASCII_CAT, title="🐱 Chaos Kitten", border_style="magenta"))
-    console.print()
+    if not silent:
+        console.print(Panel(ASCII_CAT, title="🐱 Chaos Kitten", border_style="magenta"))
+        console.print()
 
     if demo:
-        console.print("[bold cyan]🎮 Running in DEMO mode![/bold cyan]")
+        if not silent:
+            console.print("[bold cyan]🎮 Running in DEMO mode![/bold cyan]")
         target = target or "http://localhost:5000"
         spec = spec or "examples/sample_openapi.json"
-        console.print(f"🎯 Target: {target}")
-        console.print(f"📋 Spec: {spec}")
-        console.print()
+        
+        if not silent:
+            console.print(f"🎯 Target: {target}")
+            console.print(f"📋 Spec: {spec}")
+            console.print()
 
     # Check for API keys if using LLM providers
     import os
     if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"):
-        console.print("[bold red]❌ I can't see![/bold red]")
-        console.print("I need an [bold]ANTHROPIC_API_KEY[/bold] or [bold]OPENAI_API_KEY[/bold] to plan my mischief.")
-        console.print("[dim]Please set one in your environment or .env file.[/dim]")
+        if not silent:
+            console.print("[bold red]❌ I can't see![/bold red]")
+            console.print("I need an [bold]ANTHROPIC_API_KEY[/bold] or [bold]OPENAI_API_KEY[/bold] to plan my mischief.")
+            console.print("[dim]Please set one in your environment or .env file.[/dim]")
         
         if not demo and not chaos:
             raise typer.Exit(code=1)

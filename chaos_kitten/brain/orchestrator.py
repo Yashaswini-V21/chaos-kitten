@@ -7,7 +7,7 @@ import json
 import logging
 from collections import defaultdict
 from functools import partial
-from typing import Any, Dict, List, Literal, TypedDict
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 try:
     from langgraph.graph import END, START, StateGraph
@@ -23,8 +23,13 @@ from rich.progress import (
     TextColumn,
 )
 
-from chaos_kitten.brain.attack_planner import AttackPlanner
-from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
+from chaos_kitten.brain.attack_planner import AttackPlanner, NaturalLanguagePlanner
+try:
+    from chaos_kitten.brain.adaptive_planner import AdaptivePayloadGenerator
+    HAS_ADAPTIVE = True
+except ImportError:
+    HAS_ADAPTIVE = False
+    AdaptivePayloadGenerator = None
 # Internal Chaos Kitten imports
 from chaos_kitten.brain.openapi_parser import OpenAPIParser
 # from chaos_kitten.brain.response_analyzer import ResponseAnalyzer # Deprecated/Replaced
@@ -46,6 +51,7 @@ class AgentState(TypedDict):
     results: List[Dict[str, Any]]
     findings: List[Dict[str, Any]]
     recon_results: Dict[str, Any]
+    nl_plan: Optional[Dict[str, Any]]  # Natural language planning results
 
 
 async def run_recon(state: AgentState, app_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -70,15 +76,88 @@ async def run_recon(state: AgentState, app_config: Dict[str, Any]) -> Dict[str, 
 
 
 
-def parse_openapi(state: AgentState) -> Dict[str, Any]:
+def parse_openapi(state: AgentState, app_config: Dict[str, Any] = None) -> Dict[str, Any]:
+    """Parse OpenAPI spec or use pre-filtered diff endpoints."""
     try:
-        parser = OpenAPIParser(state["spec_path"])
-        parser.parse()
-        endpoints = parser.get_endpoints()
+        # Check if we're in diff mode with pre-computed delta endpoints
+        diff_mode = app_config.get("diff_mode", {}) if app_config else {}
+
+        if diff_mode.get("enabled"):
+            delta_endpoints = diff_mode.get("delta_endpoints") or []
+            if delta_endpoints:
+                # Use delta endpoints from diff analysis
+                endpoints = delta_endpoints
+                console.print(f"[bold cyan]🔄 Diff mode: Testing {len(endpoints)} changed endpoints[/bold cyan]")
+            else:
+                # Diff mode enabled but no delta endpoints provided/found
+                logger.warning(
+                    "Diff mode is enabled but no delta_endpoints were provided; "
+                    "no endpoints will be tested."
+                )
+                console.print(
+                    "[bold yellow]⚠ Diff mode enabled but no changed endpoints found/provided; skipping tests.[/bold yellow]"
+                )
+                endpoints = []
+        else:
+            # Normal mode: parse full spec
+            parser = OpenAPIParser(state["spec_path"])
+            parser.parse()
+            endpoints = parser.get_endpoints()
     except Exception:
         logger.exception("Failed to parse OpenAPI spec")
         raise
     return {"endpoints": endpoints, "current_endpoint": 0}
+
+
+def natural_language_plan(state: AgentState, app_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Filter endpoints based on natural language goal."""
+    goal = app_config.get("agent", {}).get("goal")
+    
+    if not goal:
+        # No goal specified, return all endpoints unchanged
+        return {"nl_plan": {}}
+    
+    console.print(f"[bold cyan]🎯 Planning attacks for goal:[/bold cyan] {goal}")
+    
+    try:
+        planner = NaturalLanguagePlanner(state["endpoints"], app_config)
+        nl_plan = planner.plan(goal)
+        
+        # Filter endpoints based on NL plan
+        # Build (method, path) set for precise matching
+        relevant_pairs = {
+            (ep.get("method", "").upper(), ep.get("path"))
+            for ep in nl_plan.get("endpoints", [])
+        }
+        if relevant_pairs:
+            filtered_endpoints = [
+                ep for ep in state["endpoints"]
+                if (ep.get("method", "GET").upper(), ep.get("path")) in relevant_pairs
+            ]
+        else:
+            # Fallback: path-only
+            relevant_paths = {ep.get("path") for ep in nl_plan.get("endpoints", [])}
+            filtered_endpoints = [
+                ep for ep in state["endpoints"]
+                if ep.get("path") in relevant_paths
+            ]
+        
+        console.print(
+            f"[green]✓ LLM selected {len(filtered_endpoints)}/{len(state['endpoints'])} "
+            f"relevant endpoints[/green]"
+        )
+        
+        if nl_plan.get("focus"):
+            console.print(f"[yellow]Focus:[/yellow] {nl_plan['focus']}")
+        
+        return {
+            "endpoints": filtered_endpoints or state["endpoints"],  # Fallback to all if none match
+            "nl_plan": nl_plan
+        }
+    except Exception as exc:
+        logger.exception("Natural language planning failed: %s", exc)
+        console.print("[yellow]⚠️  NL planning failed, using all endpoints[/yellow]")
+        return {"nl_plan": {}}
 
 
 def plan_attacks(state: AgentState) -> Dict[str, Any]:
@@ -92,7 +171,11 @@ def plan_attacks(state: AgentState) -> Dict[str, Any]:
     # For now, we trust the LLM to deduce context from the endpoint itself.
     
     planner = AttackPlanner([endpoint])
-    return {"planned_attacks": planner.plan_attacks(endpoint)}
+    
+    # Extract NL-selected profiles if available
+    nl_profiles = (state.get("nl_plan") or {}).get("profiles")
+    
+    return {"planned_attacks": planner.plan_attacks(endpoint, allowed_profiles=nl_profiles)}
 
 
 async def execute_and_analyze(
@@ -115,31 +198,30 @@ async def execute_and_analyze(
     # Initialize Adaptive Generator if needed
     adaptive_gen = None
     if adaptive_mode:
-        provider = agent_config.get("llm_provider", "anthropic").lower()
-        model = agent_config.get("model", "claude-3-5-sonnet-20241022")
-        temperature = agent_config.get("temperature", 0.7)
+        if not HAS_ADAPTIVE:
+            logger.warning("AdaptivePayloadGenerator unavailable (missing dependencies). Adaptive mode disabled.")
+            adaptive_mode = False
+        else:
+            provider = agent_config.get("llm_provider", "anthropic").lower()
+            model = agent_config.get("model", "claude-3-5-sonnet-20241022")
+            temperature = agent_config.get("temperature", 0.7)
 
-        try:
-            if provider == "openai":
-                from langchain_openai import ChatOpenAI
-                llm = ChatOpenAI(model=model, temperature=temperature)
-            elif provider == "anthropic":
-                try: 
+            try:
+                if provider == "openai":
+                    from langchain_openai import ChatOpenAI
+                    llm = ChatOpenAI(model=model, temperature=temperature)
+                elif provider == "anthropic":
                     from langchain_anthropic import ChatAnthropic
                     llm = ChatAnthropic(model=model, temperature=temperature)
-                except ImportError:
-                    logger.error("langchain_anthropic not installed. Disabling adaptive mode.")
-                    adaptive_mode = False
-                    llm = None
-            else:
-                raise ValueError(f"Unsupported LLM provider for adaptive mode: {provider}")
-                
-            if adaptive_mode and llm:
+                else:
+                    raise ValueError(f"Unsupported LLM provider for adaptive mode: {provider}")
+
+                    
                 adaptive_gen = AdaptivePayloadGenerator(llm, max_rounds=max_rounds)
-        except ImportError as e:
-            logger.error(f"Failed to import LLM provider dependencies: {e}")
-            logger.warning("Adaptive mode disabled due to missing dependencies.")
-            adaptive_mode = False
+            except (ImportError, ValueError) as e:
+                logger.exception("Failed to set up adaptive LLM: %s", e)
+                logger.warning("Adaptive mode disabled due to missing dependencies or invalid provider.")
+                adaptive_mode = False
 
     new_findings = []
     
@@ -178,6 +260,7 @@ async def execute_and_analyze(
             payload_used = str(payload_val)
         
         response_data = {
+            "headers": result.get("headers", {}),
             "body": result.get("body", result.get("response_body", "")),
             "status_code": result.get("status_code", 0),
             "elapsed_ms": result.get("elapsed_ms", result.get("response_time", 0)),
