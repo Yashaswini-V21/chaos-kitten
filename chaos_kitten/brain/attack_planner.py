@@ -668,7 +668,7 @@ You must respond ONLY with valid JSON (no markdown, no explanations outside JSON
             "reason": "Handles payment processing, critical for price manipulation testing"
         }}
     ],
-    "profiles": ["idor_basic", "mass_assignment", "bola"],
+    "profiles": ["IDOR - Basic", "Mass Assignment / Parameter Pollution", "BOLA - Broken Object Level Authorization"],
     "focus": "Test for price/quantity manipulation in cart and checkout flows. Pay special attention to total calculation bypass and discount abuse."
 }}
 

@@ -144,7 +144,6 @@ def plan_attacks(state: AgentState) -> Dict[str, Any]:
     planner = AttackPlanner([endpoint])
     
     # Extract NL-selected profiles if available
-    nl_plan = state.get("nl_plan") or {}
     nl_profiles = (state.get("nl_plan") or {}).get("profiles")
     
     return {"planned_attacks": planner.plan_attacks(endpoint, allowed_profiles=nl_profiles)}
