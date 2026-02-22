@@ -7,191 +7,63 @@ severity: "medium"
 description: >
   Tests for sensitive information exposure through error messages, response headers,
   debug endpoints, metadata leakage, source code comments, and excessive user data.
-  Covers CWE-200 (Information Exposure) and OWASP A01 (Broken Access Control).
+  Covers CWE-200 (Information Exposure) and OWASP A02/A05:2021.
 
-# Attack payloads categorized by disclosure type
+# Fields to inject payloads into (empty for path-based disclosure tests)
+target_fields: []
+
+# Simple payloads to trigger error messages and expose information
 payloads:
-  # --- Category 1: Error Message Leakage (stack traces, database errors, version info) ---
+  # Error-inducing payloads (malformed syntax to trigger stack traces)
+  - "'"                                    # SQL syntax boundary
+  - "{invalid_json"                        # Malformed JSON parser error
+  - '{"number": "not_a_number"}'           # Type mismatch error
+  - "undefined"                            # Undefined value
+  - "NaN"                                  # Not a Number
+  - "%00"                                  # Null byte injection
+  - "{{7*7}}"                              # Template injection probe
+  - "/../../../etc/passwd"                 # Path traversal
+  - "/api/users/999999999"                 # Invalid ID out of range
+  - "divisor=0"                            # Division by zero
   
-  # Trigger application errors to provoke verbose error messages
-  - type: "error_message_leakage"
-    path: "/api/users/invalid_id"
-    description: "Invalid ID to trigger stack trace"
-    
-  - type: "error_message_leakage"
-    path: "/api/users"
-    method: "POST"
-    description: "Malformed JSON to trigger parser error"
-    payload: "{invalid_json"
-    
-  - type: "error_message_leakage"
-    path: "/api/search"
-    description: "SQL syntax error trigger"
-    payload: "query=test'"
-    
-  - type: "error_message_leakage"
-    path: "/api/process"
-    method: "POST"
-    description: "Type error trigger"
-    payload: '{"number": "not_a_number"}'
-    
-  - type: "error_message_leakage"
-    path: "/api/calculate"
-    method: "POST"
-    description: "Division by zero"
-    payload: "divisor=0"
+  # Debug/verbose mode flags
+  - "debug=true"
+  - "verbose=1"
+  - "trace=1"
+  - "XDEBUG_SESSION_START=1"
   
+  # Common debug/info paths (to test as path segments)
+  - "/debug"
+  - "/api/debug"
+  - "/metrics"
+  - "/api/health"
+  - "/api/status"
+  - "/api/version"
+  - "/api/info"
+  - "/admin"
+  - "/api/admin"
   
-  # --- Category 2: Response Header Exposure (X-Powered-By, Server, technical details) ---
+  # Documentation/metadata paths
+  - "/api/swagger"
+  - "/api/docs"
+  - "/swagger.json"
+  - "/api/v1/swagger.json"
+  - "/openapi.json"
+  - "/api/openapi.json"
   
-  - type: "header_exposure"
-    path: "/"
-    description: "Check for X-Powered-By header"
-    check_headers:
-      - "X-Powered-By"
-      - "Server"
-      - "X-AspNet-Version"
-      - "X-AspNetMvc-Version"
-      - "X-Runtime"
-      - "X-Version"
+  # Source code/config file paths
+  - "/.git/config"
+  - "/.env"
+  - "/package.json"
+  - "/composer.json"
+  - "/api.js"
+  - "/main.js"
+  - "/config.js"
   
-  
-  # --- Category 3: Metadata Exposure (API docs, admin panels, version endpoints) ---
-  
-  - type: "metadata_exposure"
-    path: "/api/swagger"
-    description: "Swagger/OpenAPI documentation accessible"
-    
-  - type: "metadata_exposure"
-    path: "/api/docs"
-    description: "API documentation endpoint"
-    
-  - type: "metadata_exposure"
-    path: "/api/v1/swagger.json"
-    description: "OpenAPI spec file"
-    
-  - type: "metadata_exposure"
-    path: "/api/openapi.json"
-    description: "OpenAPI spec alternate path"
-    
-  - type: "metadata_exposure"
-    path: "/graphql"
-    method: "POST"
-    description: "GraphQL introspection enabled"
-    payload: '{"query": "{ __schema { types { name } } }"}'
-    
-  - type: "metadata_exposure"
-    path: "/admin"
-    description: "Admin panel accessible"
-    
-  - type: "metadata_exposure"
-    path: "/api/admin"
-    description: "Admin API endpoint"
-  
-  
-  # --- Category 4: Debug Endpoints (debug flags, metrics, health checks with details) ---
-  
-  - type: "debug_endpoints"
-    path: "/debug"
-    description: "Debug mode endpoint"
-    
-  - type: "debug_endpoints"
-    path: "/api/debug"
-    description: "API debug endpoint"
-    
-  - type: "debug_endpoints"
-    path: "/metrics"
-    description: "Prometheus/metrics endpoint with system info"
-    
-  - type: "debug_endpoints"
-    path: "/api/health"
-    description: "Health check with verbose system details"
-    
-  - type: "debug_endpoints"
-    path: "/api/status"
-    description: "Status endpoint with version info"
-    
-  - type: "debug_endpoints"
-    path: "/api/version"
-    description: "Version information endpoint"
-    
-  - type: "debug_endpoints"
-    path: "/api/info"
-    description: "Application info endpoint"
-    
-  - type: "debug_endpoints"
-    path: "/?debug=true"
-    description: "Debug flag in query params"
-    
-  - type: "debug_endpoints"
-    path: "/api/users?verbose=1"
-    description: "Verbose mode flag"
-  
-  
-  # --- Category 5: Comments/Source Code (API keys in comments, source disclosure) ---
-  
-  - type: "source_disclosure"
-    path: "/api.js"
-    description: "JavaScript source files with API keys"
-    
-  - type: "source_disclosure"
-    path: "/main.js"
-    description: "Main JavaScript bundle"
-    
-  - type: "source_disclosure"
-    path: "/config.js"
-    description: "Configuration JavaScript"
-    
-  - type: "source_disclosure"
-    path: "/.git/config"
-    description: "Git configuration with repository URLs"
-    
-  - type: "source_disclosure"
-    path: "/package.json"
-    description: "NPM package file with dependencies"
-    
-  - type: "source_disclosure"
-    path: "/composer.json"
-    description: "Composer package file"
-  
-  
-  # --- Category 6: User Data Exposure (PII, excessive data, directory listings) ---
-  
-  - type: "user_data_exposure"
-    path: "/api/users"
-    description: "User list with excessive fields (PII)"
-    check_fields:
-      - "email"
-      - "phone"
-      - "ssn"
-      - "address"
-      - "password"
-      - "password_hash"
-      - "credit_card"
-      
-  - type: "user_data_exposure"
-    path: "/api/users/{user_id}"
-    description: "User profile with sensitive fields"
-    check_fields:
-      - "salary"
-      - "date_of_birth"
-      - "social_security_number"
-      
-  - type: "user_data_exposure"
-    path: "/api/profile"
-    description: "Profile endpoint with excessive data"
-    
-  - type: "user_data_exposure"
-    path: "/uploads/"
-    description: "File upload directory listing"
-    
-  - type: "user_data_exposure"
-    path: "/files/"
-    description: "Files directory listing"
-    
-  - type: "user_data_exposure"
-    path: "/api/logs"
-    description: "Application logs accessible"
+  # Directory listing probes  
+  - "/uploads/"
+  - "/files/"
+  - "/api/logs"
 
 
 # Success indicators for information disclosure
@@ -275,7 +147,6 @@ success_indicators:
     - "X-Version"
     
   status_codes:
-    - 403  # Forbidden but reveals existence
     - 500  # Internal errors with stack traces
 
 
@@ -377,4 +248,4 @@ references:
   - "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/01-Testing_For_Improper_Error_Handling"
 
 cwe: "CWE-200"
-owasp: "A01:2021"
+owasp: "A02/A05:2021"
