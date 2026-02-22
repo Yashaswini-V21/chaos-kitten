@@ -234,12 +234,22 @@ def scan(
         report_file = reporter.generate({"vulnerabilities": vulnerabilities}, target_url)
         console.print(f"\n📄 Report: [underline]{report_file}[/underline]")
         
-        # Enforce fail-on-critical
-        if fail_on_critical:
-            critical_vulns = [v for v in vulnerabilities if str(v.get("severity", "")).lower() == "critical"]
-            if critical_vulns:
-                console.print(f"[bold red]❌ {len(critical_vulns)} critical vulnerabilities. Failing pipeline.[/bold red]")
-                raise typer.Exit(code=1)
+        # Enforce --fail-on severity threshold
+        if fail_on and fail_on.lower() != "none":
+            severity_order = ["low", "medium", "high", "critical"]
+            threshold = fail_on.lower()
+            if threshold in severity_order:
+                threshold_idx = severity_order.index(threshold)
+                failing_vulns = [
+                    v for v in vulnerabilities
+                    if str(v.get("severity", "")).lower() in severity_order[threshold_idx:]
+                ]
+                if failing_vulns:
+                    console.print(
+                        f"[bold red]❌ {len(failing_vulns)} vulnerabilities at or above "
+                        f"'{threshold}' severity. Failing pipeline.[/bold red]"
+                    )
+                    raise typer.Exit(code=1)
         
     except Exception as e:
         console.print(f"[bold red]💥 Error:[/bold red] {str(e)}")
