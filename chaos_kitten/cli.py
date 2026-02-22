@@ -147,12 +147,10 @@ def scan(
         console.print()
 
     # Check for API keys if using LLM providers
-    # Check for API keys if using LLM providers
     import os
     if not demo and not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"):
-        console.print("[yellow]⚠️  No LLM API ID found (ANTHROPIC_API_KEY or OPENAI_API_KEY).[/yellow]")
+        console.print("[yellow]⚠️  No LLM API key found (ANTHROPIC_API_KEY or OPENAI_API_KEY).[/yellow]")
         console.print("[yellow]    Some features like attack planning might not work.[/yellow]")
-        # raise typer.Exit(code=1)
     elif not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"):
          console.print("[yellow]⚠️  Proceeding without API keys since we are in demo mode...[/yellow]")
     
