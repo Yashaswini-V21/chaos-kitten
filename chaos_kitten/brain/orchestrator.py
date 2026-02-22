@@ -213,6 +213,7 @@ async def execute_and_analyze(
                     llm = ChatAnthropic(model=model, temperature=temperature)
                 else:
                     raise ValueError(f"Unsupported LLM provider for adaptive mode: {provider}")
+
                     
                 adaptive_gen = AdaptivePayloadGenerator(llm, max_rounds=max_rounds)
             except (ImportError, ValueError) as e:
@@ -257,6 +258,7 @@ async def execute_and_analyze(
             payload_used = str(payload_val)
         
         response_data = {
+            "headers": result.get("headers", {}),
             "body": result.get("body", result.get("response_body", "")),
             "status_code": result.get("status_code", 0),
             "elapsed_ms": result.get("elapsed_ms", result.get("response_time", 0)),
@@ -392,15 +394,17 @@ class Orchestrator:
                 "Please upgrade Python or use a compatible langgraph version."
             )
         from langgraph.graph import END, START, StateGraph
-        workflow = StateGraph(AgentState)
 
+        workflow = StateGraph(AgentState)
         workflow.add_node("recon", partial(run_recon, app_config=self.config))
         workflow.add_node("parse", parse_openapi)
         workflow.add_node("nl_plan", partial(natural_language_plan, app_config=self.config))
         workflow.add_node("plan", plan_attacks)
-        workflow.add_node(
-            "execute_analyze", partial(execute_and_analyze, executor=executor, app_config=self.config)
-        )
+
+        async def execute_analyze_wrapper(state: AgentState):
+            return await execute_and_analyze(state, executor, self.config)
+
+        workflow.add_node("execute_analyze", execute_analyze_wrapper)
 
         workflow.add_edge(START, "recon")
         workflow.add_edge("recon", "parse")
