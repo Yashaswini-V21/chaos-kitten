@@ -161,7 +161,7 @@ response_analyzer:
       severity: "critical"
     
     - name: "Email"
-      regex: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+      regex: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
       severity: "medium"
     
     - name: "Phone Number"
@@ -169,7 +169,7 @@ response_analyzer:
       severity: "medium"
     
     - name: "API Key"
-      regex: '(api[_-]?key|apikey)["\']?\s*[:=]\s*["\']?([a-zA-Z0-9_\-]{20,})'
+      regex: '(api[_-]?key|apikey)["'']?\s*[:=]\s*["'']?([a-zA-Z0-9_\-]{20,})'
       severity: "critical"
     
     - name: "AWS Access Key"
@@ -181,22 +181,23 @@ response_analyzer:
       severity: "critical"
     
     - name: "Password in JSON"
-      regex: '(password|passwd|pwd)["\']?\s*:\s*["\']([^"\']{1,})'
+      regex: '(password|passwd|pwd)["'']?\s*:\s*["'']([^"'']{1,})'
       severity: "high"
   
   # Stack trace patterns
   stack_trace_indicators:
-    - "Traceback (most recent call last)"
-    - "at line \d+ in"
-    - "\.py\", line \d+"
-    - "\.java:\d+"
-    - "\.cs:line \d+"
-    - "Exception in thread"
+    - 'Traceback (most recent call last)'
+    - 'at line \d+ in'
+    - '\.py", line \d+'
+    - '\.java:\d+'
+    - '\.cs:line \d+'
+    - 'Exception in thread'
   
   # Internal path leakage
   internal_paths:
     - "/var/www/"
-    - "/home/"
+    - "/home/www-data/"
+    - "/home/ubuntu/"
     - "/usr/local/"
     - "C:\\Windows\\"
     - "C:\\inetpub\\"
