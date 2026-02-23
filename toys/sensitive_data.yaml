@@ -7,30 +7,36 @@ severity: "medium"
 description: >
   Tests for sensitive information exposure through error messages, response headers,
   debug endpoints, metadata leakage, source code comments, and excessive user data.
-  Covers CWE-200 (Information Exposure) and OWASP A01:2021.
+  Covers CWE-200 (Information Exposure) and OWASP A01:2021 (Broken Access Control),
+  A02:2021 (Cryptographic Failures), and A04:2021 (Insecure Design).
+  
+  This profile sends error-inducing payloads to trigger verbose error messages and
+  checks responses for leaked sensitive data including PII, credentials, stack traces,
+  internal paths, and version information.
 
-# Fields to inject payloads into (fields that might trigger error messages or debug output)
+# Response fields to inspect for sensitive data leakage
+# These are field names that commonly contain sensitive information
 target_fields:
-  - "id"
-  - "user_id"
-  - "post_id"
-  - "item_id"
-  - "order_id"
-  - "query"
-  - "q"
-  - "search"
-  - "file"
-  - "filename"
-  - "path"
-  - "url"
-  - "redirect"
-  - "format"
-  - "type"
-  - "debug"
-  - "verbose"
-  - "trace"
-  - "log"
-  - "level"
+  - "ssn"
+  - "social_security_number"
+  - "credit_card"
+  - "card_number"
+  - "cvv"
+  - "password"
+  - "api_key"
+  - "access_token"
+  - "refresh_token"
+  - "private_key"
+  - "secret"
+  - "credentials"
+  - "auth_token"
+  - "session_id"
+  - "cookie"
+  - "email"
+  - "phone"
+  - "address"
+  - "dob"
+  - "date_of_birth"
 
 # Payloads to trigger error messages and expose information
 payloads:
@@ -137,6 +143,70 @@ success_indicators:
     
   status_codes:
     - 500  # Internal errors with stack traces
+    - 200  # Successful requests that may expose sensitive data
+
+# Response analyzer configuration
+# Instructs the engine what to look for in API responses
+response_analyzer:
+  type: "sensitive_data_detection"
+  
+  # PII patterns to detect in response bodies
+  pii_patterns:
+    - name: "SSN"
+      regex: '\b\d{3}-\d{2}-\d{4}\b'
+      severity: "critical"
+    
+    - name: "Credit Card"
+      regex: '\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b'
+      severity: "critical"
+    
+    - name: "Email"
+      regex: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+      severity: "medium"
+    
+    - name: "Phone Number"
+      regex: '\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'
+      severity: "medium"
+    
+    - name: "API Key"
+      regex: '(api[_-]?key|apikey)["\']?\s*[:=]\s*["\']?([a-zA-Z0-9_\-]{20,})'
+      severity: "critical"
+    
+    - name: "AWS Access Key"
+      regex: 'AKIA[0-9A-Z]{16}'
+      severity: "critical"
+    
+    - name: "Private Key"
+      regex: '-----BEGIN (RSA |EC )?PRIVATE KEY-----'
+      severity: "critical"
+    
+    - name: "Password in JSON"
+      regex: '(password|passwd|pwd)["\']?\s*:\s*["\']([^"\']{1,})'
+      severity: "high"
+  
+  # Stack trace patterns
+  stack_trace_indicators:
+    - "Traceback (most recent call last)"
+    - "at line \d+ in"
+    - "\.py\", line \d+"
+    - "\.java:\d+"
+    - "\.cs:line \d+"
+    - "Exception in thread"
+  
+  # Internal path leakage
+  internal_paths:
+    - "/var/www/"
+    - "/home/"
+    - "/usr/local/"
+    - "C:\\Windows\\"
+    - "C:\\inetpub\\"
+    - "/opt/"
+  
+  # Check for verbose error responses (status 200 with unexpected data)
+  unexpected_success:
+    status: 200
+    with_auth_required: true
+    contains_sensitive_patterns: true
 
 
 # How to prevent information disclosure
